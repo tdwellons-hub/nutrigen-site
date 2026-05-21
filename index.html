@@ -1,0 +1,3492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (sessionStorage.getItem("nutrigen_auth") !== "granted") {
+    window.location.href = "/password.html";
+  }
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NutriGen — Your Personal Meal Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5efe6;
+    --bg-elev: #fbf7f0;
+    --ink: #1f1a14;
+    --ink-soft: #5a4f42;
+    --ink-muted: #8c8276;
+    --line: #e6dcc9;
+    --line-strong: #c9bda5;
+    --sage: #3d5a3d;
+    --sage-deep: #2a4129;
+    --terracotta: #b85742;
+    --terracotta-soft: #d68b75;
+    --gold: #c4954a;
+    --cream-card: #fdfaf3;
+    --shadow-sm: 0 1px 2px rgba(31,26,20,.05), 0 2px 8px rgba(31,26,20,.04);
+    --shadow-md: 0 4px 16px rgba(31,26,20,.08), 0 12px 32px rgba(31,26,20,.06);
+    --shadow-lg: 0 20px 48px rgba(31,26,20,.18);
+    --radius-sm: 4px;
+    --radius-md: 10px;
+    --radius-lg: 18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(196,149,74,.08), transparent 45%),
+      radial-gradient(circle at 88% 95%, rgba(61,90,61,.07), transparent 50%);
+  }
+
+  /* Subtle paper grain */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .35;
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .12 0 0 0 0 .1 0 0 0 0 .08 0 0 0 .35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  .display { font-family: 'Fraunces', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+  .display-italic { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 400; }
+
+  /* ============ Layout ============ */
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 32px 80px;
+  }
+
+  /* ============ Header ============ */
+  .top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 48px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--sage);
+    color: var(--bg);
+    display: grid;
+    place-items: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 500;
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,.12);
+  }
+  .brand-text {
+    line-height: 1;
+  }
+  .brand-text .name {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .brand-text .tag {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-top: 4px;
+  }
+  .nav-meta {
+    font-size: 12px;
+    color: var(--ink-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .nav-meta .dot { color: var(--terracotta); }
+
+  /* ============ Steps / progress ============ */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 48px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 28px;
+    position: relative;
+  }
+  .step:not(:last-child)::after {
+    content: "";
+    width: 32px;
+    height: 1px;
+    background: var(--line-strong);
+    margin-right: 28px;
+  }
+  .step .num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    background: transparent;
+  }
+  .step.active { color: var(--ink); }
+  .step.active .num {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .step.done .num {
+    background: var(--sage);
+    color: var(--bg);
+    border-color: var(--sage);
+  }
+  .step.done { color: var(--sage); }
+
+  /* ============ View transitions ============ */
+  .view { display: none; animation: fadeUp .5s ease both; }
+  .view.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* ============ Hero / welcome ============ */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 60px;
+    align-items: center;
+    margin-top: 12px;
+  }
+  .hero-eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-eyebrow::before {
+    content: "";
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--terracotta);
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(48px, 6.4vw, 84px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    font-weight: 360;
+  }
+  .hero h1 em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--sage);
+  }
+  .hero p {
+    margin-top: 24px;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 520px;
+  }
+  .hero-actions {
+    margin-top: 36px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .stat-row {
+    margin-top: 56px;
+    display: flex;
+    gap: 48px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-num {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-muted);
+  }
+
+  .hero-visual {
+    position: relative;
+    aspect-ratio: 1 / 1.05;
+    background: var(--cream-card);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--line);
+  }
+  .hero-visual svg { width: 100%; height: 100%; display: block; }
+
+  /* ============ Buttons ============ */
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 16px 32px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn-primary:hover {
+    background: var(--sage-deep);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+  .btn-secondary:hover {
+    background: var(--cream-card);
+    border-color: var(--ink);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    padding: 12px 0;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 14px;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+  }
+  .btn .arrow {
+    transition: transform .2s ease;
+  }
+  .btn:hover .arrow { transform: translateX(4px); }
+
+  /* ============ Preferences view ============ */
+  .pref-header {
+    margin-bottom: 48px;
+    max-width: 700px;
+  }
+  .pref-header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 16px;
+  }
+  .pref-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(36px, 4.5vw, 56px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    font-weight: 360;
+  }
+  .pref-header h2 em {
+    font-style: italic;
+    color: var(--sage);
+  }
+  .pref-header p {
+    margin-top: 16px;
+    font-size: 16px;
+    color: var(--ink-soft);
+  }
+
+  .pref-section {
+    border-top: 1px solid var(--line);
+    padding: 32px 0;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+  .pref-section .label {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .pref-section .label .num {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+  }
+  .pref-section .hint {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 8px;
+  }
+
+  .chip-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .chip {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all .15s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chip:hover { border-color: var(--ink); }
+  .chip.selected {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .chip.selected.allergy {
+    background: var(--terracotta);
+    border-color: var(--terracotta);
+    color: var(--bg);
+  }
+  .chip .check {
+    width: 14px;
+    height: 14px;
+    display: none;
+  }
+  .chip.selected .check { display: inline-block; }
+
+  /* Larger appetite chips with sub-label */
+  .chip-appetite {
+    font-family: 'DM Sans', sans-serif;
+    padding: 14px 22px;
+    border-radius: 18px;
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all .15s ease;
+    user-select: none;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 150px;
+  }
+  .chip-appetite:hover { border-color: var(--ink); transform: translateY(-1px); }
+  .chip-appetite.selected {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+    box-shadow: var(--shadow-sm);
+  }
+  .chip-appetite strong {
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'Fraunces', serif;
+    letter-spacing: -0.005em;
+  }
+  .chip-appetite .sub {
+    font-size: 11px;
+    opacity: 0.7;
+    letter-spacing: 0.04em;
+  }
+
+  /* Household number chips (compact, square-ish) */
+  .chip-number {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all .15s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .chip-number:hover { border-color: var(--ink); transform: translateY(-1px); }
+  .chip-number.selected {
+    background: var(--sage-deep);
+    color: var(--bg);
+    border-color: var(--sage-deep);
+    box-shadow: 0 2px 8px rgba(42,65,41,.25);
+  }
+
+  /* Appetite breakdown steppers */
+  .appetite-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .appetite-stepper-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    transition: border-color .15s ease;
+  }
+  .appetite-stepper-row:has(.stepper-count:not(.standard-count):not(:empty)) {
+    /* visual cue when count > 0 — handled via inline class below */
+  }
+  .appetite-stepper-row.active {
+    border-color: var(--sage);
+    background: linear-gradient(to right, rgba(61,90,61,.04), var(--cream-card) 60%);
+  }
+  .stepper-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .stepper-label .name {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    letter-spacing: -0.005em;
+  }
+  .stepper-label .cal {
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .stepper-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  .stepper-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-elev);
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    transition: all .12s ease;
+    user-select: none;
+    line-height: 1;
+    padding: 0;
+  }
+  .stepper-btn:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .stepper-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+  .stepper-count {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    min-width: 28px;
+    text-align: center;
+    line-height: 1;
+    font-weight: 400;
+  }
+  .stepper-readonly {
+    color: var(--ink-muted);
+  }
+  .stepper-hint {
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* Diet chips (single-select) */
+  .chip-diet {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all .15s ease;
+    user-select: none;
+  }
+  .chip-diet:hover {
+    border-color: var(--ink);
+    transform: translateY(-1px);
+  }
+  .chip-diet.selected {
+    background: var(--sage-deep);
+    color: var(--bg);
+    border-color: var(--sage-deep);
+    box-shadow: 0 2px 8px rgba(42,65,41,.25);
+  }
+  .chip-diet.none-option {
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+  .chip-diet.none-option.selected {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--bg);
+    font-style: normal;
+  }
+
+  /* Shopping help note */
+  .shop-note {
+    background: rgba(196,149,74,.08);
+    border: 1px solid rgba(196,149,74,.25);
+    border-radius: var(--radius-md);
+    padding: 14px 20px;
+    color: #8a6824;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .shop-note strong { color: #6e521c; font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; }
+
+  textarea.text-input {
+    width: 100%;
+    min-height: 90px;
+    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line-strong);
+    background: var(--cream-card);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    resize: vertical;
+    line-height: 1.5;
+  }
+  textarea.text-input:focus {
+    outline: none;
+    border-color: var(--ink);
+    background: var(--bg-elev);
+  }
+
+  .pref-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 40px 0 0;
+    border-top: 1px solid var(--line);
+    margin-top: 24px;
+  }
+
+  /* ============ Meal plan view ============ */
+  .plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .plan-header .title-block .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 10px;
+  }
+  .plan-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(36px, 4.5vw, 52px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    font-weight: 360;
+  }
+  .plan-header h2 em { font-style: italic; color: var(--sage); }
+  .plan-header .subtitle {
+    color: var(--ink-soft);
+    margin-top: 8px;
+    font-size: 15px;
+  }
+  .plan-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 1000px) {
+    .week-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 680px) {
+    .week-grid { grid-template-columns: 1fr; }
+  }
+
+  .day-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .day-header {
+    text-align: center;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line-strong);
+    margin-bottom: 4px;
+  }
+  .day-name {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+  .day-date {
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-top: 4px;
+  }
+
+  .meal-card {
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    cursor: pointer;
+    transition: all .18s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 130px;
+    position: relative;
+    overflow: hidden;
+  }
+  .meal-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--sage);
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+  .meal-card:hover {
+    border-color: var(--ink);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .meal-card:hover::before { opacity: 1; }
+
+  .meal-card.breakfast::before { background: var(--gold); }
+  .meal-card.lunch::before { background: var(--sage); }
+  .meal-card.dinner::before { background: var(--terracotta); }
+
+  .meal-tag {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-muted);
+    font-weight: 500;
+  }
+  .meal-card.breakfast .meal-tag { color: var(--gold); }
+  .meal-card.lunch .meal-tag { color: var(--sage); }
+  .meal-card.dinner .meal-tag { color: var(--terracotta); }
+
+  .meal-name {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .meal-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--ink-muted);
+    align-items: center;
+    margin-top: auto;
+  }
+  .meal-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+  .view-recipe-link {
+    font-size: 11px;
+    color: var(--ink);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-top: 1px dotted var(--line-strong);
+    padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* ============ Modal (recipe) ============ */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(31,26,20,.5);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+    overflow-y: auto;
+  }
+  .modal-backdrop.open { display: flex; animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from {opacity:0} to {opacity:1} }
+  .modal {
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    max-width: 820px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+  .modal-header {
+    padding: 36px 40px 28px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .modal-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 10px;
+  }
+  .modal-header h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-weight: 360;
+    margin-bottom: 16px;
+    padding-right: 50px;
+  }
+  .modal-meta {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .modal-meta div { display: flex; flex-direction: column; gap: 2px; }
+  .modal-meta .key {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-muted);
+  }
+  .modal-meta .val {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+  }
+  .modal-close {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-elev);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    color: var(--ink);
+    transition: all .15s ease;
+  }
+  .modal-close:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  .modal-body {
+    padding: 36px 40px 40px;
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 40px;
+  }
+  @media (max-width: 700px) {
+    .modal-body { grid-template-columns: 1fr; gap: 28px; }
+    .modal-header { padding: 28px 24px 22px; }
+    .modal-header h3 { font-size: 28px; }
+    .modal-body { padding: 28px 24px 32px; }
+  }
+  .modal-section h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 18px;
+    color: var(--sage-deep);
+    font-weight: 500;
+  }
+  .ingredient-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+  .ingredient-list li {
+    padding: 10px 0;
+    border-bottom: 1px dotted var(--line-strong);
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .ingredient-list li:last-child { border-bottom: none; }
+  .ingredient-list .qty { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+  .instructions {
+    counter-reset: step;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .instructions li {
+    padding-left: 44px;
+    position: relative;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+  .instructions li::before {
+    counter-increment: step;
+    content: counter(step);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--sage);
+    position: absolute;
+    left: 0;
+    top: -4px;
+    width: 32px;
+    text-align: left;
+  }
+
+  /* ============ Shopping list view ============ */
+  .shopping-header {
+    margin-bottom: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .shopping-header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 10px;
+  }
+  .shopping-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(36px, 4.5vw, 52px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    font-weight: 360;
+  }
+  .shopping-header h2 em { font-style: italic; color: var(--sage); }
+  .shopping-header .subtitle {
+    color: var(--ink-soft);
+    margin-top: 8px;
+    font-size: 15px;
+  }
+
+  .shopping-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px;
+  }
+  .shop-category {
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 24px 24px 20px;
+  }
+  .shop-category h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .shop-category .count {
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .shop-list { list-style: none; }
+  .shop-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 14px;
+    border-bottom: 1px dotted var(--line-strong);
+    cursor: pointer;
+    user-select: none;
+  }
+  .shop-list li:last-child { border-bottom: none; }
+  .shop-list .box {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    transition: all .15s ease;
+  }
+  .shop-list li:hover .box { border-color: var(--ink); }
+  .shop-list li.checked .box {
+    background: var(--sage);
+    border-color: var(--sage);
+  }
+  .shop-list li.checked .box::after {
+    content: "✓";
+    color: var(--bg);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .shop-list li.checked .item-name {
+    text-decoration: line-through;
+    color: var(--ink-muted);
+  }
+  .shop-list .item-name { flex: 1; }
+  .shop-list .qty {
+    color: var(--ink-muted);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .shop-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* ============ Empty / warning state ============ */
+  .alert {
+    background: rgba(184,87,66,.08);
+    border: 1px solid rgba(184,87,66,.25);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    color: var(--terracotta);
+    font-size: 14px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .alert strong { color: #8b3a28; }
+
+  /* ============ Store picker & coupons ============ */
+  .store-section {
+    margin-bottom: 32px;
+    padding: 28px 32px;
+    background: linear-gradient(135deg, var(--cream-card), #f6efde);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    position: relative;
+    overflow: hidden;
+  }
+  .store-section::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(196,149,74,.16), transparent 70%);
+    pointer-events: none;
+  }
+  .store-label {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .store-label em { font-style: italic; color: var(--sage); }
+  .store-label .num {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .store-hint {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .store-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    position: relative;
+  }
+  .store-chip {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all .15s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .store-chip:hover {
+    border-color: var(--ink);
+    transform: translateY(-1px);
+  }
+  .store-chip.selected {
+    background: var(--sage-deep);
+    color: var(--bg);
+    border-color: var(--sage-deep);
+    box-shadow: 0 2px 8px rgba(42,65,41,.25);
+  }
+  .store-chip.none-option {
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+
+  .savings-banner {
+    display: none;
+    margin-bottom: 32px;
+    padding: 22px 28px;
+    background: var(--sage-deep);
+    color: var(--bg);
+    border-radius: var(--radius-md);
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+  }
+  .savings-banner.visible { display: flex; }
+  .savings-banner::after {
+    content: "";
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(196,149,74,.25), transparent 70%);
+    pointer-events: none;
+  }
+  .savings-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    position: relative;
+  }
+  .savings-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.12);
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .savings-text .label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 2px;
+  }
+  .savings-text .amount {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .savings-text .detail {
+    font-size: 13px;
+    opacity: 0.85;
+    margin-top: 4px;
+  }
+  .savings-right {
+    text-align: right;
+    font-size: 12px;
+    line-height: 1.5;
+    opacity: 0.85;
+    max-width: 280px;
+    position: relative;
+  }
+  .savings-right strong {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    font-weight: 400;
+    color: #e8c98a;
+  }
+
+  /* Coupon badge on items */
+  .coupon-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(61,90,61,.12);
+    color: var(--sage-deep);
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(61,90,61,.18);
+    line-height: 1.2;
+  }
+  .coupon-badge::before {
+    content: "🏷";
+    font-size: 10px;
+  }
+  .shop-list li.has-coupon {
+    background: linear-gradient(to right, rgba(61,90,61,.04), transparent 80%);
+    margin: 0 -10px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    border-bottom: 1px dotted var(--line-strong);
+  }
+  .shop-list li {
+    flex-wrap: wrap;
+  }
+  .shop-list .item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .shop-list .item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  @media (max-width: 600px) {
+    .store-section { padding: 22px 20px; }
+    .savings-banner { padding: 18px 20px; }
+    .savings-right { text-align: left; max-width: 100%; }
+  }
+
+  /* ============ Print styles ============ */
+  @media print {
+    body::before { display: none; }
+    .top-nav, .steps, .plan-actions, .shop-actions, .nav-meta { display: none !important; }
+    body { background: white; }
+    .meal-card, .shop-category { break-inside: avoid; }
+  }
+
+  @media (max-width: 800px) {
+    .app { padding: 20px 18px 60px; }
+    .hero { grid-template-columns: 1fr; gap: 32px; }
+    .hero-visual { aspect-ratio: 16/12; }
+    .pref-section { grid-template-columns: 1fr; gap: 16px; }
+    .pref-section .label { font-size: 18px; }
+    .stat-row { flex-wrap: wrap; gap: 24px; }
+    .stat-num { font-size: 24px; }
+    .steps { overflow-x: auto; }
+  }
+  .db-loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 999;
+    transition: opacity .4s ease;
+  }
+  .db-loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .db-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--line);
+    border-top-color: var(--sage);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .db-loading-text {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink-soft);
+  }
+  .db-loading-sub {
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+  }
+  .db-error-banner {
+    display: none;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 14px 20px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .db-error-banner.visible { display: block; }
+  .recipe-count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(61,90,61,.1);
+    color: var(--sage-deep);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+  }
+</style>
+
+<!-- NutriGen v1.0 - Azure Deployment -->
+</head>
+<body>
+<div class="app">
+
+  <!-- DB loading overlay -->
+  <div class="db-loading-overlay" id="db-loading-overlay">
+    <div class="db-loading-spinner"></div>
+    <div class="db-loading-text">Loading your recipe library…</div>
+    <div class="db-loading-sub">Connecting to NutriGen database</div>
+  </div>
+
+  <!-- Top nav -->
+  <header class="top-nav">
+    <div class="brand">
+      <div class="brand-mark">N</div>
+      <div class="brand-text">
+        <div class="name">NutriGen</div>
+        <div class="tag">Family Meal Planning</div>
+      </div>
+    </div>
+    <div class="nav-meta">
+      Your week, <span class="dot">·</span> personalized
+    </div>
+  </header>
+
+  <!-- Progress steps -->
+  <nav class="steps" id="steps">
+    <div class="step active" data-step="1"><span class="num">1</span> Welcome</div>
+    <div class="step" data-step="2"><span class="num">2</span> Preferences</div>
+    <div class="step" data-step="3"><span class="num">3</span> Your Plan</div>
+    <div class="step" data-step="4"><span class="num">4</span> Shopping List</div>
+  </nav>
+
+  <!-- ========== VIEW 1: WELCOME ========== -->
+  <section class="view active" id="view-welcome">
+    <div class="hero">
+      <div>
+        <div class="hero-eyebrow">A week of better meals, in two minutes</div>
+        <h1>Plan a week of <em>healthy, family-friendly</em> meals — built around what you actually love to eat.</h1>
+        <p>Tell us your favorite cuisines, your go-to proteins, and anything you'd rather skip. We'll assemble seven days of breakfasts, lunches, and dinners — complete with recipes and one consolidated shopping list.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" onclick="goTo('preferences')">
+            Start your week <span class="arrow">→</span>
+          </button>
+          <button class="btn btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
+            How it works
+          </button>
+        </div>
+        <div class="stat-row" id="how">
+          <div class="stat">
+            <div class="stat-num display" id="stat-recipes">…</div>
+            <div class="stat-label">Recipes available</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num display">21</div>
+            <div class="stat-label">Meals per week</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num display">1</div>
+            <div class="stat-label">Smart shopping list</div>
+          </div>
+        </div>
+        <div class="db-error-banner" id="db-error-banner">
+          ⚠ Couldn't connect to the recipe database. Showing built-in recipes only.
+        </div>
+      </div>
+
+      <!-- Decorative SVG illustration -->
+      <div class="hero-visual" aria-hidden="true">
+        <svg viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="plate" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fdfaf3"/>
+              <stop offset="100%" stop-color="#e8ddc6"/>
+            </radialGradient>
+            <linearGradient id="leaf" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#4a6b48"/>
+              <stop offset="100%" stop-color="#2a4129"/>
+            </linearGradient>
+          </defs>
+          <!-- Background subtle -->
+          <rect width="400" height="420" fill="#fbf7f0"/>
+          <!-- Plate -->
+          <circle cx="200" cy="220" r="155" fill="url(#plate)" stroke="#c9bda5" stroke-width="1"/>
+          <circle cx="200" cy="220" r="135" fill="none" stroke="#d6c8ad" stroke-width="0.5" stroke-dasharray="2 4"/>
+          <!-- Food items -->
+          <!-- Tomatoes -->
+          <circle cx="155" cy="195" r="22" fill="#b85742"/>
+          <circle cx="148" cy="188" r="5" fill="#d68b75" opacity=".6"/>
+          <path d="M 153 175 Q 155 168 162 172" stroke="#4a6b48" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <circle cx="185" cy="175" r="18" fill="#c66651"/>
+          <circle cx="180" cy="170" r="4" fill="#d68b75" opacity=".5"/>
+          <!-- Greens / leaves -->
+          <ellipse cx="240" cy="180" rx="35" ry="20" fill="url(#leaf)" transform="rotate(-20 240 180)"/>
+          <ellipse cx="255" cy="200" rx="28" ry="16" fill="#3d5a3d" transform="rotate(15 255 200)"/>
+          <ellipse cx="225" cy="210" rx="25" ry="14" fill="#4a6b48" transform="rotate(-10 225 210)"/>
+          <!-- Lemon -->
+          <ellipse cx="220" cy="260" rx="22" ry="18" fill="#c4954a"/>
+          <ellipse cx="216" cy="256" rx="5" ry="3" fill="#e0b167" opacity=".6"/>
+          <!-- Grain bowl / quinoa -->
+          <path d="M 145 245 Q 145 225 175 225 Q 205 225 205 245 Q 205 275 175 275 Q 145 275 145 245" fill="#d6c08a"/>
+          <circle cx="160" cy="240" r="1.5" fill="#a88a52"/>
+          <circle cx="170" cy="245" r="1.5" fill="#a88a52"/>
+          <circle cx="180" cy="240" r="1.5" fill="#a88a52"/>
+          <circle cx="190" cy="248" r="1.5" fill="#a88a52"/>
+          <circle cx="165" cy="252" r="1.5" fill="#a88a52"/>
+          <circle cx="185" cy="258" r="1.5" fill="#a88a52"/>
+          <!-- Herb sprig -->
+          <path d="M 200 280 Q 195 295 200 310 Q 205 295 200 280" fill="#3d5a3d"/>
+          <path d="M 200 285 L 195 290 M 200 290 L 205 295 M 200 295 L 195 300" stroke="#3d5a3d" stroke-width="1.5"/>
+          <!-- Decorative text -->
+          <text x="200" y="395" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#8c8276">
+            no. 01 — your table
+          </text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== VIEW 2: PREFERENCES ========== -->
+  <section class="view" id="view-preferences">
+    <div class="pref-header">
+      <div class="eyebrow">Step 02 — Tell us about your table</div>
+      <h2>Let's get to know <em>your kitchen.</em></h2>
+      <p>Pick as many or as few as you like. The more we know, the better your week will fit your life.</p>
+    </div>
+
+    <!-- Cuisines -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">01 / Cuisines</span>
+          What flavors do you love?
+        </div>
+        <div class="hint">Pick a few or all of them.</div>
+      </div>
+      <div class="chip-grid" id="cuisine-chips"></div>
+    </div>
+
+    <!-- Proteins -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">02 / Proteins</span>
+          Your favorite proteins.
+        </div>
+        <div class="hint">We'll weight your week toward these.</div>
+      </div>
+      <div class="chip-grid" id="protein-chips"></div>
+    </div>
+
+    <!-- Allergies -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">03 / Allergies</span>
+          Anything to strictly avoid?
+        </div>
+        <div class="hint">Meals containing these will never appear.</div>
+      </div>
+      <div class="chip-grid" id="allergy-chips"></div>
+    </div>
+
+    <!-- Dislikes -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">04 / Dislikes</span>
+          Anything you'd rather skip?
+        </div>
+        <div class="hint">Type ingredients separated by commas — e.g. mushrooms, olives, cilantro.</div>
+      </div>
+      <textarea class="text-input" id="dislikes-input" placeholder="mushrooms, blue cheese, raisins…"></textarea>
+    </div>
+
+    <!-- Household size -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">05 / Household</span>
+          How many <em>people are eating?</em>
+        </div>
+        <div class="hint">Every recipe and shopping quantity will be scaled to fit your table.</div>
+      </div>
+      <div class="chip-grid" id="household-chips"></div>
+    </div>
+
+    <!-- Appetite breakdown -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">06 / Appetites</span>
+          How big <em>are the appetites?</em>
+        </div>
+        <div class="hint">Assign each eater a portion size. The default is Standard. Shopping is sized for the largest appetite to avoid running short.</div>
+      </div>
+      <div class="appetite-breakdown" id="appetite-breakdown"></div>
+    </div>
+
+    <!-- Dietary protocol -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">07 / Diet</span>
+          Following a <em>specific diet?</em>
+        </div>
+        <div class="hint">Optional. Meals will be filtered to match your protocol.</div>
+      </div>
+      <div class="chip-grid" id="diet-chips"></div>
+    </div>
+
+    <div class="pref-actions">
+      <button class="btn btn-secondary" onclick="goTo('welcome')">← Back</button>
+      <button class="btn btn-primary" onclick="generatePlan()">
+        Build my week <span class="arrow">→</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ========== VIEW 3: MEAL PLAN ========== -->
+  <section class="view" id="view-plan">
+    <div class="plan-header">
+      <div class="title-block">
+        <div class="eyebrow">Step 03 — Your week</div>
+        <h2>A week of meals, <em>built for you.</em></h2>
+        <div class="subtitle" id="plan-subtitle">Tap any meal to see the full recipe.</div>
+      </div>
+      <div class="plan-actions">
+        <button class="btn btn-secondary" onclick="goTo('preferences')">← Edit preferences</button>
+        <button class="btn btn-secondary" onclick="generatePlan(true)">↻ Reshuffle</button>
+        <button class="btn btn-primary" onclick="showShoppingList()">
+          Shopping list <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+    <div id="plan-alert"></div>
+    <div class="week-grid" id="week-grid"></div>
+  </section>
+
+  <!-- ========== VIEW 4: SHOPPING LIST ========== -->
+  <section class="view" id="view-shopping">
+    <div class="shopping-header">
+      <div>
+        <div class="eyebrow">Step 04 — One smart list</div>
+        <h2>Everything you need, <em>in one place.</em></h2>
+        <div class="subtitle" id="shopping-subtitle">Organized by store section. Tap items to check them off as you shop.</div>
+      </div>
+      <div class="plan-actions">
+        <button class="btn btn-secondary" onclick="goTo('plan')">← Back to plan</button>
+        <button class="btn btn-secondary" onclick="window.print()">🖨 Print list</button>
+      </div>
+    </div>
+    <!-- Store selector for coupon matching -->
+    <div class="store-section">
+      <div class="store-label">
+        <span class="num">Optional · Step 04a</span>
+        Apply <em>store coupons</em> to your list.
+      </div>
+      <div class="store-hint">Pick where you usually shop and we'll match this week's deals to your cart.</div>
+      <div class="store-chips" id="store-chips"></div>
+    </div>
+
+    <!-- Savings banner (shown after store selected) -->
+    <div class="savings-banner" id="savings-banner">
+      <div class="savings-left">
+        <div class="savings-icon">🎟</div>
+        <div class="savings-text">
+          <div class="label">Estimated weekly savings</div>
+          <div class="amount" id="savings-amount">$0.00</div>
+          <div class="detail" id="savings-detail">0 coupons matched at your store</div>
+        </div>
+      </div>
+      <div class="savings-right">
+        <strong>How it works:</strong> Coupons shown reflect typical weekly promotions at your store. Final savings depend on weekly circulars and loyalty program enrollment.
+      </div>
+    </div>
+
+    <div class="shopping-grid" id="shopping-grid"></div>
+    <div class="shop-actions">
+      <button class="btn btn-ghost" onclick="resetAll()">Start a new week</button>
+      <div style="font-size:12px;color:var(--ink-muted);letter-spacing:.1em;text-transform:uppercase">
+        Built with NutriGen
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Recipe modal -->
+<div class="modal-backdrop" id="recipe-modal" onclick="closeModalOnBackdrop(event)">
+  <div class="modal" id="recipe-modal-content"></div>
+</div>
+
+<script>
+/* ============================================================
+ *  NUTRIGEN — API CONFIG
+ * ============================================================ */
+/* ============================================================
+ *  Azure Functions API — plain fetch, no SDK required.
+ *  Works when opening the file directly (file://) or from a server.
+ * ============================================================ */
+const SUPABASE_URL     = 'https://nutrigen-api.azurewebsites.net/api';
+const SUPABASE_API_KEY = 'not-required';
+
+async function sbFetch(table, params = {}) {
+  const url = new URL(`${SUPABASE_URL}/${table}`);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), {
+    headers: {
+      'apikey':        SUPABASE_API_KEY,
+      'Authorization': `Bearer ${SUPABASE_API_KEY}`,
+      'Accept':        'application/json',
+      'Prefer':        'count=none',
+      // Override the default 1000-row cap — fetch everything
+      'Range':         '0-9999',
+      'Range-Unit':    'items',
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${text}`);
+  }
+  return res.json();
+}
+
+// Safety net: remove overlay after 10s no matter what
+setTimeout(() => {
+  const overlay = document.getElementById('db-loading-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+    setTimeout(() => overlay.remove(), 500);
+  }
+}, 10000);
+
+/* ============================================================
+ *  MEAL DATABASE — populated async from Supabase
+ *  Shape mirrors the original hardcoded array so all existing
+ *  plan generation, filtering, and rendering logic is unchanged.
+ * ============================================================ */
+let MEALS = [];
+let mealsReady = false;
+let mealsLoadPromise = null;
+
+function transformDbRow(row) {
+  // ingredients: nested select returns array under 'recipe_ingredients'
+  const rawIngredients = row.recipe_ingredients || row.ingredients || [];
+  const ingredients = rawIngredients.map(i => ({
+    item:     i.item,
+    qty:      parseFloat(i.qty) || 1,
+    unit:     i.unit || null,
+    category: i.category || 'pantry',
+  }));
+  // steps: nested select returns array under 'recipe_steps'
+  const rawSteps = row.recipe_steps || row.steps || [];
+  const steps = rawSteps
+    .sort((a, b) => (a.step_order || 0) - (b.step_order || 0))
+    .map(s => s.instruction);
+
+  return {
+    id:         row.id,
+    name:       row.name,
+    type:       row.meal_type,          // meal_type → type
+    cuisines:   row.cuisines   || [],
+    proteins:   row.proteins   || [],
+    allergens:  row.allergens  || [],
+    prep:       row.prep_minutes || 30, // prep_minutes → prep
+    servings:   row.base_servings || 4, // base_servings → servings
+    diet_tags:  row.diet_tags  || [],
+    source:     row.source     || 'nutrigen_seed',
+    ingredients,
+    steps,
+  };
+}
+
+async function loadMeals() {
+  if (mealsReady) return MEALS;
+  if (mealsLoadPromise) return mealsLoadPromise;
+
+  mealsLoadPromise = (async () => {
+    try {
+      // Step 1: fetch all public recipes
+      const recipeData = await sbFetch('recipes', {
+        'is_public': 'eq.true',
+        'order':     'id',
+        'select':    '*',
+      });
+
+      if (!recipeData || recipeData.length === 0) {
+        console.warn('NutriGen: no recipes returned from database');
+        mealsReady = true;
+        return MEALS;
+      }
+
+      // Step 2: fetch ingredients (all at once — PostgREST handles large IN lists)
+      const ids = recipeData.map(r => r.id).join(',');
+      const ingData = await sbFetch('recipe_ingredients', {
+        'recipe_id': `in.(${ids})`,
+        'select':    '*',
+      });
+
+      // Step 3: fetch steps
+      const stepData = await sbFetch('recipe_steps', {
+        'recipe_id': `in.(${ids})`,
+        'order':     'step_order',
+        'select':    '*',
+      });
+
+      // Step 4: manually join on the client side
+      const ingByRecipe  = {};
+      const stepByRecipe = {};
+      for (const ing  of (ingData  || [])) { (ingByRecipe[ing.recipe_id]   ||= []).push(ing);  }
+      for (const step of (stepData || [])) { (stepByRecipe[step.recipe_id] ||= []).push(step); }
+
+      MEALS = recipeData.map(r => ({
+        id:         r.id,
+        name:       r.name,
+        type:       r.meal_type,
+        cuisines:   r.cuisines   || [],
+        proteins:   r.proteins   || [],
+        allergens:  r.allergens  || [],
+        prep:       r.prep_minutes  || 30,
+        servings:   r.base_servings || 4,
+        diet_tags:  r.diet_tags  || [],
+        source:     r.source     || 'nutrigen_seed',
+        ingredients: (ingByRecipe[r.id] || []).map(i => ({
+          item:     i.item,
+          qty:      parseFloat(i.qty) || 1,
+          unit:     i.unit || null,
+          category: i.category || 'pantry',
+        })),
+        steps: (stepByRecipe[r.id] || [])
+          .sort((a, b) => a.step_order - b.step_order)
+          .map(s => s.instruction),
+      }));
+      mealsReady = true;
+
+      // Update the recipe count stat on the welcome screen
+      const statEl = document.getElementById('stat-recipes');
+      if (statEl) statEl.textContent = MEALS.length;
+
+      console.log(`NutriGen: loaded ${MEALS.length} recipes from database`);
+    } catch (err) {
+      // Log the full error so we can diagnose it
+      const errMsg = err?.message || err?.details || err?.hint || JSON.stringify(err) || String(err);
+      console.error('NutriGen DB error:', errMsg, err);
+      // Show error banner with real message
+      const banner = document.getElementById('db-error-banner');
+      if (banner) {
+        banner.textContent = '⚠ Database error: ' + errMsg + ' — open browser console (F12) for details.';
+        banner.classList.add('visible');
+      }
+      const statEl = document.getElementById('stat-recipes');
+      if (statEl) statEl.textContent = '0';
+    } finally {
+      // Hide loading overlay
+      const overlay = document.getElementById('db-loading-overlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        setTimeout(() => overlay.remove(), 500);
+      }
+    }
+    return MEALS;
+  })();
+
+  return mealsLoadPromise;
+}
+
+// Start loading immediately on page load
+loadMeals();
+
+
+
+/* ============================================================
+ *  PURCHASE UNIT RULES
+ *  Converts recipe measurements into how items are actually bought.
+ *  Each rule has either {exact:'name'} or {match:/regex/} and a
+ *  result(qtyByUnit) function returning a display string.
+ * ============================================================ */
+/* ============================================================
+ *  INGREDIENT NAME NORMALIZER
+ *  Strips colour prefixes, cooking-method prefixes, and common
+ *  suffixes so "boneless skinless chicken breasts" → "chicken breast"
+ *  and "extra-virgin olive oil" → "olive oil" etc.
+ * ============================================================ */
+function normalizeIngredientName(raw) {
+  let n = raw.toLowerCase().trim();
+
+  // Remove common adjective prefixes
+  const prefixes = [
+    'extra-virgin ', 'extra virgin ', 'cold-pressed ',
+    'boneless skinless ', 'boneless ', 'skinless ',
+    'bone-in ', 'bone in ',
+    'lean ', 'extra-lean ', 'extra lean ',
+    'raw ', 'cooked ', 'frozen ', 'thawed ', 'dried ',
+    'canned ', 'jarred ', 'fresh ', 'freshly ',
+    'chopped ', 'diced ', 'minced ', 'sliced ', 'shredded ',
+    'grated ', 'crumbled ', 'mashed ', 'crushed ', 'peeled ',
+    'halved ', 'quartered ', 'julienned ', 'spiralized ',
+    'organic ', 'free-range ', 'grass-fed ',
+    'large ', 'medium ', 'small ', 'baby ',
+    'red ', 'green ', 'yellow ', 'orange ', 'purple ', 'white ', 'black ',
+    'sweet ', 'hot ', 'mild ',
+    'low-sodium ', 'low sodium ', 'reduced-fat ', 'reduced fat ',
+    'full-fat ', 'whole ', 'skim ',
+    'unsalted ', 'salted ', 'plain ',
+    'dark ', 'light ',
+  ];
+  for (const p of prefixes) {
+    if (n.startsWith(p)) n = n.slice(p.length);
+  }
+
+  // Pluralise normalisation (simple)
+  const pluralMap = {
+    'chicken breasts':   'chicken breast',
+    'chicken thighs':    'chicken thigh, boneless',
+    'chicken legs':      'chicken leg',
+    'garlic cloves':     'garlic clove',
+    'green onions':      'green onion',
+    'scallions':         'green onion',
+    'spring onions':     'green onion',
+    'shallots':          'shallot',
+    'bell peppers':      'bell pepper',
+    'lemons':            'lemon',
+    'limes':             'lime',
+    'tomatoes':          'tomato',
+    'avocados':          'avocado',
+    'bananas':           'banana',
+    'apples':            'apple',
+    'onions':            'onion',
+    'carrots':           'carrot',
+    'eggs':              'large eggs',
+    'egg':               'large eggs',
+    'zucchinis':         'zucchini',
+    'zucchinis':         'zucchini',
+    'zucchini squash':   'zucchini',
+    'courgette':         'zucchini',
+    'aubergine':         'eggplant',
+    'prawns':            'shrimp',
+    'scampi':            'shrimp',
+    'stock':             'broth',
+    'chicken stock':     'chicken broth',
+    'beef stock':        'beef broth',
+    'vegetable stock':   'vegetable broth',
+    'pasta':             'spaghetti',
+    'noodles':           'spaghetti',
+    'canola oil':        'vegetable oil',
+    'sunflower oil':     'vegetable oil',
+    'grapeseed oil':     'olive oil',
+    'cooking oil':       'vegetable oil',
+    'kosher salt':       'salt',
+    'sea salt':          'salt',
+    'flaky salt':        'salt',
+    'table salt':        'salt',
+    'ground black pepper': 'black pepper',
+    'freshly ground black pepper': 'black pepper',
+    'black peppercorns': 'black pepper',
+    'pepper':            'black pepper',
+    'heavy whipping cream': 'heavy cream',
+    'whipping cream':    'heavy cream',
+    'double cream':      'heavy cream',
+    'half and half':     'milk',
+    'whole milk':        'milk',
+    'almond milk':       'milk',
+    'oat milk':          'milk',
+    'soy milk':          'milk',
+    'parmesan':          'parmesan cheese',
+    'parmigiano reggiano': 'parmesan cheese',
+    'pecorino':          'parmesan cheese',
+    'mozzarella':        'fresh mozzarella',
+    'ricotta':           'cottage cheese',
+    'creme fraiche':     'sour cream',
+    'scallion':          'green onion',
+    'cilantro leaves':   'cilantro',
+    'coriander':         'cilantro',
+    'coriander leaves':  'cilantro',
+    'flat-leaf parsley': 'fresh parsley',
+    'italian parsley':   'fresh parsley',
+    'basil leaves':      'fresh basil',
+    'thai basil leaves': 'fresh thai basil',
+    'ginger root':       'fresh ginger',
+    'ground ginger':     'fresh ginger',
+    'lemongrass':        'fresh ginger',
+    'capsicum':          'bell pepper',
+    'cos lettuce':       'romaine lettuce',
+    'iceberg lettuce':   'lettuce',
+    'spring mix':        'mixed greens',
+    'arugula':           'mixed greens',
+    'rocket':            'mixed greens',
+    'chickpeas':         'beans',
+    'garbanzo beans':    'beans',
+    'navy beans':        'beans',
+    'cannellini beans':  'beans',
+    'great northern beans': 'beans',
+    'pinto beans, cooked': 'pinto beans',
+    'black beans, cooked': 'black beans',
+    'kidney beans, cooked': 'kidney beans',
+    'tamari':            'soy sauce',
+    'coconut aminos':    'soy sauce',
+    'worcestershire sauce': 'soy sauce',
+    'white wine vinegar': 'rice vinegar',
+    'apple cider vinegar': 'rice vinegar',
+    'red pepper':        'bell pepper',
+    'jalapeño':          'thai chili',
+    'serrano pepper':    'thai chili',
+    'chili':             'thai chili',
+    'chilli':            'thai chili',
+    'walnuts, chopped':  'walnuts',
+    'peanuts, chopped':  'peanuts',
+    'toasted sesame seeds': 'sesame seeds',
+    'hemp seeds':        'chia seeds',
+    'flax seeds':        'chia seeds',
+    'smoked salmon':     'smoked salmon',
+    'lox':               'smoked salmon',
+    'tuna, drained':     'tuna',
+    'canned tuna':       'tuna',
+    'cream of coconut':  'coconut milk',
+    'coconut cream':     'coconut milk',
+    'light coconut milk': 'coconut milk',
+    'all purpose flour': 'all-purpose flour',
+    'plain flour':       'all-purpose flour',
+    'self-raising flour': 'all-purpose flour',
+    'panko breadcrumbs': 'breadcrumbs',
+    'panko':             'breadcrumbs',
+    'italian breadcrumbs': 'breadcrumbs',
+    'polenta':           'cornstarch',
+  };
+  if (pluralMap[n]) n = pluralMap[n];
+
+  // Strip trailing plurals for simple words (cloves, breasts, etc.)
+  n = n.replace(/s$/, '');
+
+  return n;
+}
+
+/* ============================================================
+ *  PURCHASE UNIT RULES (broadened to match imported recipes)
+ * ============================================================ */
+const PURCHASE_RULES = [
+  /* --- Spices, seasonings & pantry powders: 1 jar --- */
+  {match: /salt|pepper|paprika|cumin|oregano|turmeric|cinnamon|chili.powder|taco.season|garam.masala|garlic.powder|onion.powder|italian.herb|cayenne|allspice|cardamom|coriander.seed|fennel|mustard.seed|nutmeg|clove|bay.leaf|vanilla|baking.powder|baking.soda|cream.of.tartar/i,
+   result: () => '1 jar'},
+
+  /* --- Oils --- */
+  {match: /olive.oil|sesame.oil|vegetable.oil|canola.oil|coconut.oil|avocado.oil/i,
+   result: () => '1 bottle (16 oz)'},
+
+  /* --- Liquid sauces & condiments --- */
+  {match: /soy.sauce|tamari|fish.sauce|oyster.sauce|hoisin|teriyaki|worcestershire/i,
+   result: () => '1 bottle'},
+  {match: /rice.vinegar|red.wine.vinegar|balsamic.vinegar|white.wine.vinegar|apple.cider.vinegar/i,
+   result: () => '1 bottle'},
+  {match: /dijon|mustard/i, result: () => '1 jar'},
+  {match: /sriracha|hot.sauce|tabasco/i, result: () => '1 bottle'},
+  {match: /honey|maple.syrup|agave/i, result: () => '1 bottle'},
+  {match: /balsamic.glaze/i, result: () => '1 bottle'},
+  {match: /mirin|sake/i, result: () => '1 bottle'},
+  {match: /tamarind/i, result: () => '1 jar'},
+  {match: /peanut.butter|almond.butter/i, result: () => '1 jar (16 oz)'},
+  {match: /salsa/i, result: () => '1 jar (24 oz)'},
+  {match: /marinara|pasta.sauce|tomato.sauce/i, result: () => '1 jar (24 oz)'},
+  {match: /hummus/i, result: () => '1 tub (10 oz)'},
+  {match: /capers/i, result: () => '1 small jar'},
+  {match: /olives?/i, result: () => '1 jar'},
+  {match: /red.wine|white.wine|apple.cider$/i, result: () => '1 bottle'},
+
+  /* --- Eggs --- */
+  {match: /eggs?/i, result: (q) => {
+    const n = (q.whole || 0) + Math.ceil((q.tbsp||0)/3);
+    if (n <= 6)  return '½ dozen (6 ct)';
+    if (n <= 12) return '1 dozen (12 ct)';
+    if (n <= 18) return '1½ dozen (18 ct)';
+    return `${Math.ceil(n/12)} dozen`;
+  }},
+
+  /* --- Garlic --- */
+  {match: /garlic/i, result: (q) => {
+    const cloves = q.whole || Math.ceil((q.tbsp||0) * 3) || 1;
+    const heads = Math.ceil(cloves / 10);
+    return heads <= 1 ? '1 head garlic' : `${heads} heads garlic`;
+  }},
+
+  /* --- Onions & shallots --- */
+  {match: /(red.onion|yellow.onion|white.onion|onion)/i, result: (q) => {
+    const n = Math.ceil(q.whole || (q.lb||0)*4 || 1);
+    return n <= 1 ? '1 onion' : `${n} onions`;
+  }},
+  {match: /shallot/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 2 ? '1 pack shallots' : `${n} shallots`;
+  }},
+
+  /* --- Countable produce --- */
+  {match: /(bell.pepper|capsicum|sweet.pepper)/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 1 ? '1 bell pepper' : `${n} bell peppers`;
+  }},
+  {match: /(tomato)/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 1 ? '1 tomato' : `${n} tomatoes`;
+  }},
+  {match: /lemon/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 1 ? '1 lemon' : `${n} lemons`;
+  }},
+  {match: /lime/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 1 ? '1 lime' : `${n} limes`;
+  }},
+  {match: /cucumber/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 1 ? '1 cucumber' : `${n} cucumbers`;
+  }},
+  {match: /avocado/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 1 ? '1 avocado' : `${n} avocados`;
+  }},
+  {match: /banana/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 3 ? '1 bunch bananas' : '2 bunches bananas';
+  }},
+  {match: /mango/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 1 ? '1 mango' : `${n} mangos`;
+  }},
+  {match: /apple/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 3 ? '3-pack apples' : '1 bag (5 lb) apples';
+  }},
+  {match: /eggplant|aubergine/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 1 ? '1 eggplant' : `${n} eggplants`;
+  }},
+  {match: /zucchini|courgette/i, result: (q) => {
+    const n = Math.ceil(q.whole || 1);
+    return n <= 2 ? `${n} zucchini` : `${n} zucchini`;
+  }},
+
+  /* --- Green onions / scallions --- */
+  {match: /green.onion|scallion|spring.onion/i, result: (q) => {
+    const stalks = q.whole || 4;
+    return Math.ceil(stalks / 7) <= 1 ? '1 bunch' : '2 bunches';
+  }},
+
+  /* --- Leafy greens & salad --- */
+  {match: /baby.spinach|fresh.spinach|spinach/i, result: (q) => {
+    const cups = q.cup || (q.oz||0)/1.5 || 2;
+    return cups <= 4 ? '1 bag (5 oz)' : '1 bag (10 oz)';
+  }},
+  {match: /romaine|cos.lettuce/i, result: () => '1 head romaine'},
+  {match: /mixed.green|spring.mix|arugula|rocket/i, result: () => '1 bag (5 oz)'},
+  {match: /butter.lettuce|bibb.lettuce/i, result: () => '1 head'},
+  {match: /napa.cabbage/i, result: () => '1 head'},
+  {match: /cabbage/i, result: () => '1 small head'},
+  {match: /kale/i, result: () => '1 bunch'},
+  {match: /bean.sprout/i, result: () => '1 bag (12 oz)'},
+
+  /* --- Other produce --- */
+  {match: /carrot/i, result: (q) => {
+    const n = Math.ceil(q.whole || (q.lb||0)*6 || 2);
+    return n <= 5 ? '1 lb bag' : '2 lb bag';
+  }},
+  {match: /celery/i, result: () => '1 bunch'},
+  {match: /potato/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    if (lbs <= 1.5) return '1 lb bag';
+    if (lbs <= 3)   return '3 lb bag';
+    return '5 lb bag';
+  }},
+  {match: /sweet.potato/i, result: (q) => {
+    const n = Math.ceil(q.whole || (q.lb||0)*2 || 2);
+    return n <= 2 ? '2 sweet potatoes' : `${n} sweet potatoes`;
+  }},
+  {match: /broccoli/i, result: (q) => {
+    const cups = q.cup || (q.lb||0)*4 || 2;
+    return cups <= 3 ? '1 crown (≈12 oz)' : '2 crowns';
+  }},
+  {match: /asparagus/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    return lbs <= 1 ? '1 bunch (≈1 lb)' : '2 bunches';
+  }},
+  {match: /snap.pea|snow.pea/i, result: () => '1 bag (8 oz)'},
+  {match: /green.bean/i, result: (q) => {
+    const oz = (q.oz||0) + (q.lb||0)*16;
+    return oz <= 12 ? '12 oz bag' : '1 lb bag';
+  }},
+  {match: /cherry.tomato|grape.tomato/i, result: (q) => {
+    const cups = q.cup || 1;
+    return cups <= 1 ? '1 pint (10 oz)' : '1 lb container';
+  }},
+  {match: /corn/i, result: () => '1 bag frozen (12 oz)'},
+  {match: /mushroom/i, result: (q) => {
+    const oz = (q.oz||0) + (q.lb||0)*16 || 8;
+    return oz <= 8 ? '8 oz pack' : '16 oz pack';
+  }},
+  {match: /cauliflower.rice/i, result: (q) => {
+    const cups = q.cup || 2;
+    return cups <= 3 ? '1 bag (12 oz)' : '2 bags (12 oz)';
+  }},
+  {match: /cauliflower/i, result: () => '1 head'},
+  {match: /thai.chili|jalape|serrano|chili.pepper/i, result: () => '1 small pack'},
+
+  /* --- Fresh herbs --- */
+  {match: /fresh.basil|basil.leaves/i, result: () => '1 bunch'},
+  {match: /fresh.parsley|flat.leaf.parsley|italian.parsley/i, result: () => '1 bunch'},
+  {match: /fresh.cilantro|cilantro|coriander.leaves/i, result: () => '1 bunch'},
+  {match: /fresh.dill/i, result: () => '1 bunch'},
+  {match: /fresh.thyme|thyme/i, result: () => '1 bunch'},
+  {match: /fresh.rosemary|rosemary/i, result: () => '1 bunch'},
+  {match: /fresh.mint|mint.leaves/i, result: () => '1 bunch'},
+  {match: /fresh.ginger|ginger.root/i, result: () => '1 piece (3–4 in)'},
+
+  /* --- Proteins: meat & seafood by weight --- */
+  {match: /chicken.breast/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    return `${Math.max(1,Math.ceil(lbs))} lb chicken breast`;
+  }},
+  {match: /chicken.thigh/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    return `${Math.max(1,Math.ceil(lbs))} lb chicken thighs`;
+  }},
+  {match: /ground.chicken/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    return `${Math.max(1,Math.ceil(lbs))} lb ground chicken`;
+  }},
+  {match: /ground.beef|ground.meat|minced.beef/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    return `${Math.max(1,Math.ceil(lbs))} lb ground beef`;
+  }},
+  {match: /ground.lamb/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    return `${Math.max(1,Math.ceil(lbs))} lb ground lamb`;
+  }},
+  {match: /ground.turkey/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    return `${Math.max(1,Math.ceil(lbs))} lb ground turkey`;
+  }},
+  {match: /flank.steak|sirloin|ribeye|strip.steak|skirt.steak|steak/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16 || 1;
+    return `${Math.max(1,Math.ceil(lbs))} lb steak`;
+  }},
+  {match: /pork.tenderloin/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16 || 1;
+    return `${Math.max(1,Math.ceil(lbs))} lb pork tenderloin`;
+  }},
+  {match: /pork.chop/i, result: (q) => {
+    const n = Math.ceil(q.whole || (q.lb||0)*2 || 2);
+    return `${n} pork chops`;
+  }},
+  {match: /sausage|chorizo|bratwurst/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16 || 1;
+    return `${Math.max(1,Math.ceil(lbs))} lb pack`;
+  }},
+  {match: /bacon/i, result: (q) => {
+    const slices = q.slice || q.whole || 6;
+    return Math.ceil(slices/16) <= 1 ? '1 lb pack bacon' : '2 lb pack bacon';
+  }},
+  {match: /turkey.breast|sliced.turkey|deli.turkey/i, result: (q) => {
+    const oz = (q.oz||0) + (q.lb||0)*16 || 8;
+    return oz <= 8 ? '8 oz deli turkey' : '1 lb deli turkey';
+  }},
+  {match: /lamb.chop|lamb.shoulder|lamb.leg/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16 || 1;
+    return `${Math.max(1,Math.ceil(lbs))} lb lamb`;
+  }},
+  {match: /salmon/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16;
+    return `${Math.max(1,Math.ceil(lbs))} lb salmon fillet`;
+  }},
+  {match: /cod/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16 || 1;
+    return `${Math.max(1,Math.ceil(lbs))} lb cod fillet`;
+  }},
+  {match: /tuna/i, result: (q) => {
+    const oz = (q.oz||0) + (q.lb||0)*16;
+    const cans = Math.max(1, Math.ceil(oz/5));
+    return `${cans} can${cans>1?'s':''} tuna (5 oz)`;
+  }},
+  {match: /shrimp|prawn/i, result: (q) => {
+    const lbs = (q.lb||0) + (q.oz||0)/16 || 1;
+    return `${Math.max(1,Math.ceil(lbs))} lb shrimp`;
+  }},
+  {match: /smoked.salmon|lox/i, result: (q) => {
+    const oz = (q.oz||0) + (q.lb||0)*16 || 4;
+    return oz <= 4 ? '4 oz smoked salmon' : '8 oz smoked salmon';
+  }},
+  {match: /tofu/i, result: (q) => {
+    const oz = (q.oz||0) + (q.lb||0)*16;
+    const blocks = Math.max(1, Math.ceil(oz/14));
+    return `${blocks} block${blocks>1?'s':''} firm tofu (14 oz)`;
+  }},
+
+  /* --- Dairy by volume/weight --- */
+  {match: /milk|almond.milk|oat.milk|soy.milk/i, result: (q) => {
+    const cups = (q.cup||0) + (q.fl_oz||0)/8 + (q.ml||0)/240;
+    if (cups <= 2)  return '1 quart (32 oz)';
+    if (cups <= 4)  return '1 quart (32 oz)';
+    if (cups <= 8)  return '½ gallon (64 oz)';
+    return '1 gallon';
+  }},
+  {match: /heavy.cream|whipping.cream|double.cream/i, result: (q) => {
+    const cups = q.cup || (q.fl_oz||0)/8 || 0.5;
+    if (cups <= 1) return '1 half-pint (8 oz)';
+    if (cups <= 2) return '1 pint (16 oz)';
+    return '1 quart (32 oz)';
+  }},
+  {match: /greek.yogurt/i, result: (q) => {
+    const oz = (q.cup||0)*8 + (q.oz||0);
+    if (oz <= 5)  return '1 single (5.3 oz)';
+    if (oz <= 16) return '1 tub (16 oz)';
+    return '1 large tub (32 oz)';
+  }},
+  {match: /yogurt|yoghurt/i, result: (q) => {
+    const oz = (q.cup||0)*8 + (q.oz||0);
+    return oz <= 16 ? '1 tub (16 oz)' : '1 large tub (32 oz)';
+  }},
+  {match: /sour.cream|creme.fraiche/i, result: (q) => {
+    const oz = (q.cup||0)*8 + (q.oz||0);
+    return oz <= 8 ? '1 small (8 oz)' : '1 tub (16 oz)';
+  }},
+  {match: /cottage.cheese|ricotta/i, result: (q) => {
+    const oz = (q.cup||0)*8 + (q.oz||0);
+    return oz <= 16 ? '1 tub (16 oz)' : '1 large tub (24 oz)';
+  }},
+  {match: /cream.cheese/i, result: (q) => {
+    const blocks = Math.max(1, Math.ceil(((q.cup||0)*8+(q.oz||0))/8));
+    return `${blocks} block${blocks>1?'s':''} cream cheese (8 oz)`;
+  }},
+  {match: /butter/i, result: (q) => {
+    const sticks = Math.max(1, Math.ceil(((q.cup||0)*2+(q.tbsp||0)/8+(q.oz||0)/4)));
+    return sticks <= 2 ? '1 pack butter (4 sticks)' : '2 packs butter';
+  }},
+  {match: /parmesan|parmigiano|pecorino/i, result: (q) => {
+    const oz = (q.cup||0)*3.5 + (q.oz||0);
+    return oz <= 5 ? '1 wedge/tub (5 oz)' : '1 wedge/tub (8 oz)';
+  }},
+  {match: /feta/i, result: (q) => {
+    const oz = (q.cup||0)*5 + (q.oz||0);
+    if (oz <= 6) return '1 container (6 oz)';
+    return `${Math.ceil(oz/8)} containers (8 oz)`;
+  }},
+  {match: /fresh.mozzarella|mozzarella.ball/i, result: (q) => {
+    const oz = q.oz || (q.lb||0)*16 || 8;
+    return `${Math.max(1,Math.ceil(oz/8))} ball${oz>8?'s':''} fresh mozzarella (8 oz)`;
+  }},
+  {match: /mozzarella/i, result: (q) => {
+    const oz = (q.cup||0)*4 + (q.oz||0);
+    const bags = Math.max(1, Math.ceil(oz/8));
+    return `${bags} bag${bags>1?'s':''} shredded mozzarella (8 oz)`;
+  }},
+  {match: /cheddar/i, result: (q) => {
+    const oz = (q.cup||0)*4 + (q.oz||0);
+    const bags = Math.max(1, Math.ceil(oz/8));
+    return `${bags} bag${bags>1?'s':''} shredded cheddar (8 oz)`;
+  }},
+  {match: /monterey.jack/i, result: (q) => {
+    const oz = (q.cup||0)*4 + (q.oz||0);
+    return Math.ceil(oz/8) <= 1 ? '1 bag shredded Monterey Jack (8 oz)' : '2 bags shredded Monterey Jack';
+  }},
+
+  /* --- Canned & jarred pantry --- */
+  {match: /crushed.tomato|diced.tomato|whole.tomato/i, result: (q) => {
+    const cups = q.cup || (q.oz||0)/8 || 1;
+    const cans = Math.max(1, Math.ceil(cups/1.75));
+    return `${cans} can${cans>1?'s':''} (14 oz)`;
+  }},
+  {match: /tomato.paste/i, result: () => '1 small can (6 oz)'},
+  {match: /vegetable.broth|chicken.broth|beef.broth|stock/i, result: (q) => {
+    const cups = q.cup || (q.oz||0)/8 || 2;
+    if (cups <= 2)  return '1 carton (32 oz)';
+    if (cups <= 8)  return '1 carton (32 oz)';
+    return '2 cartons (32 oz)';
+  }},
+  {match: /coconut.milk/i, result: (q) => {
+    const cups = q.cup || (q.oz||0)/8 || 1;
+    const cans = Math.max(1, Math.ceil(cups/1.75));
+    return `${cans} can${cans>1?'s':''} coconut milk (14 oz)`;
+  }},
+  {match: /black.bean/i, result: (q) => {
+    const cups = q.cup || 1;
+    const cans = Math.max(1, Math.ceil(cups/1.5));
+    return `${cans} can${cans>1?'s':''} black beans (15 oz)`;
+  }},
+  {match: /kidney.bean/i, result: (q) => {
+    const cups = q.cup || 1;
+    const cans = Math.max(1, Math.ceil(cups/1.5));
+    return `${cans} can${cans>1?'s':''} kidney beans (15 oz)`;
+  }},
+  {match: /pinto.bean/i, result: (q) => {
+    const cups = q.cup || 1;
+    const cans = Math.max(1, Math.ceil(cups/1.5));
+    return `${cans} can${cans>1?'s':''} pinto beans (15 oz)`;
+  }},
+  {match: /chickpea|garbanzo/i, result: (q) => {
+    const cups = q.cup || 1;
+    const cans = Math.max(1, Math.ceil(cups/1.5));
+    return `${cans} can${cans>1?'s':''} chickpeas (15 oz)`;
+  }},
+  {match: /beans?/i, result: (q) => {
+    const cups = q.cup || 1;
+    const cans = Math.max(1, Math.ceil(cups/1.5));
+    return `${cans} can${cans>1?'s':''} beans (15 oz)`;
+  }},
+
+  /* --- Dry pantry --- */
+  {match: /spaghetti|linguine|fettuccine|penne|rigatoni|rotini|pasta/i, result: () => '1 box (16 oz)'},
+  {match: /rice.noodle|pad.thai.noodle/i, result: () => '1 pack (14 oz)'},
+  {match: /rice/i, result: (q) => {
+    const cups = q.cup || 2;
+    return cups <= 4 ? '1 bag (2 lb dry)' : '2 bags (2 lb dry)';
+  }},
+  {match: /quinoa/i, result: () => '1 bag (12 oz dry)'},
+  {match: /rolled.oat|oatmeal/i, result: () => '1 canister (18 oz)'},
+  {match: /lentil/i, result: () => '1 bag (1 lb)'},
+  {match: /all.purpose.flour|plain.flour/i, result: () => '1 bag (5 lb)'},
+  {match: /breadcrumb|panko/i, result: () => '1 container (15 oz)'},
+  {match: /cornstarch|corn.starch/i, result: () => '1 box (16 oz)'},
+  {match: /nutritional.yeast/i, result: () => '1 bag (8 oz)'},
+  {match: /chia.seed/i, result: () => '1 bag (12 oz)'},
+  {match: /sesame.seed/i, result: () => '1 bag (4 oz)'},
+  {match: /coconut.flake|desiccated.coconut/i, result: () => '1 bag (7 oz)'},
+  {match: /granola/i, result: () => '1 bag (12 oz)'},
+  {match: /almond.sliced|slivered.almond/i, result: () => '1 bag (6 oz)'},
+  {match: /walnuts?/i, result: () => '1 bag (8 oz)'},
+  {match: /peanuts?/i, result: () => '1 bag (16 oz)'},
+  {match: /cashew/i, result: () => '1 bag (8 oz)'},
+  {match: /brown.sugar|white.sugar|caster.sugar/i, result: () => '1 bag (2 lb)'},
+  {match: /sugar/i, result: () => '1 bag (2 lb)'},
+  {match: /tomato.paste/i, result: () => '1 small can (6 oz)'},
+
+  /* --- Bread & bakery --- */
+  {match: /bagel/i, result: (q) => {
+    const n = Math.ceil(q.whole || 2);
+    return n <= 4 ? '1 pack bagels (4 ct)' : '2 packs bagels';
+  }},
+  {match: /burger.bun|hamburger.bun/i, result: (q) => {
+    const n = Math.ceil(q.whole || 4);
+    return n <= 4 ? '1 pack buns (4 ct)' : '2 packs buns';
+  }},
+  {match: /pita.bread|pita/i, result: (q) => {
+    const n = Math.ceil(q.whole || 4);
+    return n <= 4 ? '1 pack pita (6 ct)' : '2 packs pita';
+  }},
+  {match: /flour.tortilla|tortilla/i, result: (q) => {
+    const n = Math.ceil(q.whole || 4);
+    return n <= 6 ? '1 pack tortillas (8 ct)' : '2 packs tortillas';
+  }},
+  {match: /corn.tortilla/i, result: (q) => {
+    const n = Math.ceil(q.whole || 8);
+    return n <= 12 ? '1 pack corn tortillas (30 ct)' : '2 packs corn tortillas';
+  }},
+  {match: /ciabatta|sourdough|baguette/i, result: () => '1 loaf'},
+  {match: /sandwich.bread|whole.grain.bread|whole.wheat.bread|bread.slice|loaf/i, result: () => '1 loaf'},
+  {match: /read/i, result: () => '1 loaf'},
+  {match: /naan/i, result: () => '1 pack naan (4 ct)'},
+
+  /* --- Frozen --- */
+  {match: /frozen.mango|mango.chunk/i, result: () => '1 bag frozen mango (12 oz)'},
+  {match: /frozen.pineapple|pineapple.chunk/i, result: () => '1 bag frozen pineapple (12 oz)'},
+  {match: /mixed.berr|frozen.berr/i, result: () => '1 bag frozen mixed berries (12 oz)'},
+  {match: /edamame/i, result: () => '1 bag edamame (12 oz)'},
+  {match: /frozen.corn/i, result: () => '1 bag frozen corn (12 oz)'},
+  {match: /frozen.pea/i, result: () => '1 bag frozen peas (12 oz)'},
+];
+
+/* ============================================================
+ *  SMART FALLBACK PURCHASE DISPLAY
+ *  When no PURCHASE_RULES rule matches, convert raw measurements
+ *  into something a shopper would actually look for at a store.
+ * ============================================================ */
+function smartFallback(itemName, qtyByUnit) {
+  const name = itemName.toLowerCase();
+
+  // Weight-sold items (meat, fish, produce by lb)
+  if (/chicken|beef|pork|lamb|turkey|salmon|cod|fish|shrimp|prawn|steak|tenderloin|sausage/.test(name)) {
+    const lbs = (qtyByUnit.lb||0) + (qtyByUnit.oz||0)/16 + (qtyByUnit.g||0)/453.6;
+    return `${Math.max(1, Math.ceil(lbs))} lb`;
+  }
+
+  // Volume-sold items (liquids, sauces)
+  if (qtyByUnit.cup || qtyByUnit.fl_oz || qtyByUnit.ml || qtyByUnit.l) {
+    const cups = (qtyByUnit.cup||0) + (qtyByUnit.fl_oz||0)/8 + (qtyByUnit.ml||0)/240 + (qtyByUnit.l||0)*4.23;
+    const oz = Math.round(cups * 8);
+    if (oz <= 8)  return '1 small container (8 oz)';
+    if (oz <= 16) return '1 medium container (16 oz)';
+    if (oz <= 32) return '1 large container (32 oz)';
+    return `${Math.ceil(oz/32)} large containers`;
+  }
+
+  // Spoon-measure items (spices, extracts — 1 jar covers it)
+  if (qtyByUnit.tsp || qtyByUnit.tbsp) {
+    const tbsp = (qtyByUnit.tbsp||0) + (qtyByUnit.tsp||0)/3;
+    return tbsp <= 4 ? '1 jar' : '1 large jar';
+  }
+
+  // Weight in g/kg (imported recipes often use metric)
+  if (qtyByUnit.g || qtyByUnit.kg) {
+    const g = (qtyByUnit.g||0) + (qtyByUnit.kg||0)*1000;
+    const oz = Math.round(g / 28.35);
+    const lbs = (g / 453.6).toFixed(1);
+    if (oz <= 8)  return `1 small pack (~${oz} oz)`;
+    if (oz <= 16) return `1 pack (~1 lb)`;
+    return `${Math.ceil(g/453.6)} lb`;
+  }
+
+  // Whole/countable items
+  if (qtyByUnit.whole) {
+    const n = Math.ceil(qtyByUnit.whole);
+    return n <= 1 ? '1' : `${n}`;
+  }
+
+  // Absolute last resort
+  const parts = Object.entries(qtyByUnit)
+    .filter(([,v]) => v > 0)
+    .map(([u, q]) => {
+      const r = Math.round(q * 10) / 10;
+      return u === 'whole' ? `${r}` : `${r} ${u}`;
+    });
+  return parts.length ? parts.join(' + ') : '1 unit';
+}
+
+function findPurchase(itemName, qtyByUnit) {
+  // First normalize the name to catch imported recipe variations
+  const normalized = normalizeIngredientName(itemName);
+
+  // Try matching with the normalized name first, then the original
+  for (const name of [normalized, itemName.toLowerCase().trim()]) {
+    for (const rule of PURCHASE_RULES) {
+      if (rule.exact && rule.exact === name) return rule.result(qtyByUnit);
+      if (rule.match && rule.match.test(name)) return rule.result(qtyByUnit);
+    }
+  }
+
+  // Smart fallback — never shows a raw decimal
+  return smartFallback(itemName, qtyByUnit);
+}
+
+/* ============================================================
+ *  STORES & COUPONS
+ *  Sample weekly-circular style coupons for major US chains.
+ *  Each coupon: match (regex), label, amount ($ saved).
+ * ============================================================ */
+const STORES = [
+  {key:'kroger',      label:'Kroger'},
+  {key:'walmart',     label:'Walmart'},
+  {key:'target',      label:'Target'},
+  {key:'publix',      label:'Publix'},
+  {key:'wholefoods',  label:'Whole Foods'},
+  {key:'aldi',        label:'ALDI'},
+  {key:'traderjoes',  label:"Trader Joe's"},
+  {key:'safeway',     label:'Safeway'},
+  {key:'heb',         label:'H-E-B'},
+  {key:'wegmans',     label:'Wegmans'},
+  {key:'foodlion',    label:'Food Lion'},
+  {key:'harristeeter',label:'Harris Teeter'},
+];
+
+const COUPONS = {
+  kroger: [
+    {match: /chicken (breast|thigh)|ground chicken/i, label:'$2.00/lb off chicken', amount:2.00},
+    {match: /salmon|cod fillets/i,                    label:'$3.00 off seafood',    amount:3.00},
+    {match: /shrimp/i,                                label:'$2.50 off shrimp',     amount:2.50},
+    {match: /greek yogurt|plain yogurt/i,             label:'$1.50 off yogurt',     amount:1.50},
+    {match: /(crushed|diced) tomatoes|tomato paste/i, label:'2 for $3 canned tomatoes', amount:1.00},
+    {match: /olive oil/i,                             label:'$2.00 off olive oil',  amount:2.00},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i, label:'$1.50 off cheese', amount:1.50},
+    {match: /large eggs/i,                            label:'$0.75 off dozen eggs', amount:0.75},
+    {match: /spaghetti|linguine|rotini pasta/i,       label:'5 for $5 pasta',       amount:1.00},
+    {match: /(black|kidney|pinto) beans/i,            label:'4 for $5 beans',       amount:0.75},
+    {match: /milk/i,                                  label:'$0.50 off milk',       amount:0.50},
+  ],
+  walmart: [
+    {match: /chicken (breast|thigh)|ground chicken/i, label:'Rollback: $0.99/lb chicken', amount:0.99},
+    {match: /ground beef|flank steak/i,               label:'Rollback: $1.50/lb beef',    amount:1.50},
+    {match: /milk/i,                                  label:'Rollback $0.50 on milk',     amount:0.50},
+    {match: /large eggs/i,                            label:'Rollback $0.75 on eggs',     amount:0.75},
+    {match: /bread|bagel|tortilla|pita|bun/i,         label:'Great Value bakery savings', amount:0.50},
+    {match: /yogurt/i,                                label:'$1.00 off yogurt',           amount:1.00},
+    {match: /salmon|cod|shrimp|tuna/i,                label:'$2.00 off seafood',          amount:2.00},
+    {match: /rolled oats|cooked rice|cooked brown rice|cooked basmati rice|cooked jasmine rice/i,
+      label:'$1.00 off grains', amount:1.00},
+    {match: /(black|kidney|pinto) beans/i,            label:'$0.50 off canned beans',    amount:0.50},
+    {match: /olive oil/i,                             label:'Rollback $1.50 olive oil',  amount:1.50},
+  ],
+  target: [
+    {match: /chicken (breast|thigh)|ground chicken|ground beef|pork tenderloin|ground lamb/i,
+      label:'Circle: 15% off meat', amount:2.00},
+    {match: /yogurt/i,                                label:'Buy 2 get $2 off yogurt',   amount:2.00},
+    {match: /mixed berries|frozen mango|frozen pineapple|fresh mango/i,
+      label:'Circle: $1.00 off fruit', amount:1.00},
+    {match: /marinara sauce/i,                        label:'$1.25 off pasta sauce',     amount:1.25},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'$2.00 off Good & Gather cheese', amount:2.00},
+    {match: /large eggs/i,                            label:'Circle: $0.75 off eggs',    amount:0.75},
+    {match: /granola|rolled oats/i,                   label:'$1.50 off breakfast staples',amount:1.50},
+    {match: /coconut milk|tamarind paste|fish sauce|soy sauce/i,
+      label:'15% off international foods', amount:0.75},
+  ],
+  publix: [
+    {match: /chicken breast/i,                        label:'BOGO chicken breast',       amount:4.00},
+    {match: /spaghetti|linguine|rotini pasta/i,       label:'BOGO pasta',                amount:1.50},
+    {match: /marinara sauce/i,                        label:'BOGO pasta sauce',          amount:2.50},
+    {match: /yogurt/i,                                label:'10 for $10 yogurt',         amount:0.99},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'Publix cheese $2.00 off', amount:2.00},
+    {match: /large eggs/i,                            label:'$1.00 off Publix eggs',     amount:1.00},
+    {match: /salmon|cod fillets/i,                    label:'Aprons Seafood $3 off',     amount:3.00},
+    {match: /(black|kidney|pinto) beans/i,            label:'10 for $10 canned beans',   amount:0.50},
+    {match: /butter/i,                                label:'$1.50 off Publix butter',   amount:1.50},
+  ],
+  wholefoods: [
+    {match: /salmon|cod fillets/i,                    label:'Prime member: $3/lb seafood', amount:3.00},
+    {match: /yogurt/i,                                label:'365 yogurt sale',           amount:1.00},
+    {match: /olive oil/i,                             label:'$3.00 off 365 olive oil',   amount:3.00},
+    {match: /mixed berries|fresh mango/i,             label:'$2.00 off organic berries', amount:2.00},
+    {match: /chicken (breast|thigh)/i,                label:'Prime: $2/lb organic chicken', amount:2.00},
+    {match: /firm tofu/i,                             label:'$1.50 off organic tofu',    amount:1.50},
+    {match: /cooked quinoa|brown lentils|cooked brown rice/i,
+      label:'Bulk savings on grains', amount:1.00},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'Prime: 20% off cheese', amount:2.50},
+    {match: /large eggs/i,                            label:'Prime: $1 off pasture eggs', amount:1.00},
+  ],
+  aldi: [
+    {match: /chicken (breast|thigh)|ground beef|pork tenderloin|ground chicken/i,
+      label:'Weekly meat special: 20% off', amount:2.00},
+    {match: /yogurt/i,                                label:'Friendly Farms yogurt deal', amount:0.75},
+    {match: /olive oil/i,                             label:'Simply Nature olive oil',   amount:2.00},
+    {match: /mixed berries|frozen mango|frozen pineapple/i,
+      label:'Aldi Finds fruit special', amount:1.50},
+    {match: /spaghetti|linguine|rotini pasta|rolled oats|cooked rice|cooked brown rice/i,
+      label:'Pantry staples savings', amount:0.50},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'Happy Farms cheese $1 off', amount:1.00},
+    {match: /large eggs/i,                            label:'Goldhen eggs $0.50 off',    amount:0.50},
+    {match: /(black|kidney|pinto) beans/i,            label:'Pueblo Lindo beans $0.30 off', amount:0.30},
+  ],
+  traderjoes: [
+    {match: /chicken (breast|thigh)/i,                label:"TJ's chicken value pack",   amount:1.50},
+    {match: /yogurt/i,                                label:'Greek yogurt low price',    amount:1.00},
+    {match: /hummus/i,                                label:"TJ's hummus best value",    amount:1.00},
+    {match: /firm tofu/i,                             label:'Organic tofu $1 off',       amount:1.00},
+    {match: /chia seeds|coconut flakes|granola/i,     label:'Pantry staples value',      amount:1.00},
+    {match: /mixed berries|frozen mango/i,            label:'TJ frozen fruit $1 off',    amount:1.00},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'TJ cheese value $1.50 off', amount:1.50},
+  ],
+  safeway: [
+    {match: /chicken (breast|thigh)/i,                label:'Just for U: $2/lb chicken', amount:2.00},
+    {match: /salmon|cod fillets/i,                    label:'Just for U: $3 off salmon', amount:3.00},
+    {match: /yogurt/i,                                label:'Lucerne yogurt $1.50 off',  amount:1.50},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'Lucerne cheese $1.00 off', amount:1.00},
+    {match: /large eggs/i,                            label:'Lucerne eggs $0.75 off',    amount:0.75},
+    {match: /spaghetti|linguine|rotini pasta|marinara sauce/i,
+      label:'5 for $5 Italian sale', amount:1.50},
+    {match: /milk/i,                                  label:'Lucerne milk $0.75 off',    amount:0.75},
+    {match: /butter/i,                                label:'Lucerne butter $1 off',     amount:1.00},
+  ],
+  heb: [
+    {match: /chicken (breast|thigh)/i,                label:'H-E-B chicken $1.50 off',   amount:1.50},
+    {match: /tortilla/i,                              label:'H-E-B Bakery tortillas',    amount:0.50},
+    {match: /yogurt/i,                                label:'H-E-B yogurt sale',         amount:1.00},
+    {match: /salsa/i,                                 label:'H-E-B salsa $1 off',        amount:1.00},
+    {match: /(black|kidney|pinto) beans|cooked rice|cooked brown rice/i,
+      label:'H-E-B pantry savings', amount:0.75},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'H-E-B cheese $1.50 off', amount:1.50},
+    {match: /ground beef|flank steak/i,               label:'H-E-B beef $2/lb off',      amount:2.00},
+    {match: /lime|avocado/i,                          label:'H-E-B produce special',     amount:0.50},
+  ],
+  wegmans: [
+    {match: /chicken (breast|thigh)/i,                label:'Family Pack chicken $1.50/lb', amount:1.50},
+    {match: /salmon|cod fillets/i,                    label:'Wegmans seafood $3 off',    amount:3.00},
+    {match: /yogurt/i,                                label:'Wegmans yogurt 10 for $10', amount:1.00},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'Wegmans cheese $2 off', amount:2.00},
+    {match: /spaghetti|linguine|rotini pasta|marinara sauce/i,
+      label:'Italian Classics sale', amount:1.50},
+    {match: /olive oil/i,                             label:'Wegmans olive oil $2 off',  amount:2.00},
+    {match: /large eggs/i,                            label:'Wegmans eggs $0.75 off',    amount:0.75},
+  ],
+  foodlion: [
+    {match: /chicken (breast|thigh)/i,                label:'MVP: $1.50/lb chicken',     amount:1.50},
+    {match: /yogurt/i,                                label:'MVP: yogurt $1 off',        amount:1.00},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'MVP: cheese $1 off', amount:1.00},
+    {match: /spaghetti|linguine|rotini pasta/i,       label:'MVP: pasta 4 for $5',       amount:1.25},
+    {match: /large eggs/i,                            label:'MVP: eggs $0.50 off',       amount:0.50},
+    {match: /milk/i,                                  label:'MVP: milk $0.50 off',       amount:0.50},
+    {match: /ground beef/i,                           label:'MVP: $1/lb ground beef',    amount:1.00},
+  ],
+  harristeeter: [
+    {match: /chicken (breast|thigh)/i,                label:'e-VIC: $2/lb chicken',      amount:2.00},
+    {match: /salmon|cod fillets/i,                    label:'Fresh Foods Market $3 off', amount:3.00},
+    {match: /yogurt/i,                                label:'HT yogurt $1.25 off',       amount:1.25},
+    {match: /(cheddar|monterey|mozzarella|parmesan|feta) cheese/i,
+      label:'HT cheese $1.75 off', amount:1.75},
+    {match: /large eggs/i,                            label:'HT eggs $0.75 off',         amount:0.75},
+    {match: /spaghetti|linguine|rotini pasta|marinara sauce/i,
+      label:'Italian sale 5 for $5', amount:1.25},
+    {match: /olive oil/i,                             label:'HT olive oil $2 off',       amount:2.00},
+  ],
+};
+
+function matchCoupon(itemName, storeKey) {
+  if (!storeKey || !COUPONS[storeKey]) return null;
+  const matches = COUPONS[storeKey].filter(c => c.match.test(itemName));
+  if (matches.length === 0) return null;
+  // Return highest-value match
+  return matches.reduce((a,b) => b.amount > a.amount ? b : a);
+}
+
+/* ============================================================
+ *  PREFERENCES OPTIONS
+ * ============================================================ */
+const CUISINES = [
+  {key:'italian', label:'Italian'},
+  {key:'mexican', label:'Mexican'},
+  {key:'asian', label:'Asian'},
+  {key:'thai', label:'Thai'},
+  {key:'indian', label:'Indian'},
+  {key:'mediterranean', label:'Mediterranean'},
+  {key:'american', label:'American'},
+];
+
+const PROTEINS = [
+  {key:'chicken', label:'Chicken'},
+  {key:'beef', label:'Beef'},
+  {key:'pork', label:'Pork'},
+  {key:'lamb', label:'Lamb'},
+  {key:'turkey', label:'Turkey'},
+  {key:'fish', label:'Fish'},
+  {key:'shellfish', label:'Shellfish'},
+  {key:'tofu', label:'Tofu'},
+  {key:'beans', label:'Beans / Legumes'},
+  {key:'eggs', label:'Eggs'},
+];
+
+const ALLERGIES = [
+  {key:'gluten', label:'Gluten'},
+  {key:'dairy', label:'Dairy'},
+  {key:'nuts', label:'Tree Nuts'},
+  {key:'shellfish', label:'Shellfish'},
+  {key:'fish', label:'Fish'},
+  {key:'eggs', label:'Eggs'},
+  {key:'soy', label:'Soy'},
+];
+
+const DIETS = [
+  {key:'none',          label:'No restriction'},
+  {key:'mediterranean', label:'Mediterranean'},
+  {key:'keto',          label:'Keto'},
+  {key:'paleo',         label:'Paleo'},
+  {key:'atkins',        label:'Atkins'},
+];
+
+/* ============================================================
+ *  DIET RULES
+ *  For strict diets (keto, paleo, atkins), meals containing any
+ *  excluded ingredient are filtered out. Mediterranean is a
+ *  preference (scored higher) rather than a filter.
+ * ============================================================ */
+const DIET_RULES = {
+  keto: {
+    excludePatterns: [
+      // Grains & starches
+      /^(spaghetti|linguine|rotini pasta|rice noodles|cooked rice|cooked brown rice|cooked basmati rice|cooked jasmine rice|cooked sushi rice|cooked quinoa|rolled oats|granola|all-purpose flour|breadcrumbs|flour tortillas?|large flour tortilla|corn tortillas|whole-grain bread|whole-grain bagel|ciabatta rolls|pita bread|burger buns)$/i,
+      // Legumes
+      /^(black beans|kidney beans|pinto beans|brown lentils|edamame|chickpeas|hummus|peanut butter|peanuts, chopped)$/i,
+      // High-carb fruits & sugars
+      /^(banana|fresh mango|frozen mango|frozen pineapple|apple|honey|maple syrup|brown sugar|apple cider)$/i,
+      // Starchy vegetables
+      /^(baby potatoes)$/i,
+      // Hidden carbs
+      /^(cornstarch|tamarind paste|oyster sauce|mirin)$/i,
+    ],
+  },
+  paleo: {
+    excludePatterns: [
+      // Grains
+      /^(spaghetti|linguine|rotini pasta|rice noodles|cooked rice|cooked brown rice|cooked basmati rice|cooked jasmine rice|cooked sushi rice|cooked quinoa|rolled oats|granola|all-purpose flour|breadcrumbs|flour tortillas?|large flour tortilla|corn tortillas|whole-grain bread|whole-grain bagel|ciabatta rolls|pita bread|burger buns)$/i,
+      // Legumes & soy
+      /^(black beans|kidney beans|pinto beans|brown lentils|edamame|chickpeas|firm tofu|hummus|peanut butter|peanuts, chopped|soy sauce|oyster sauce|mirin)$/i,
+      // Dairy
+      /^(milk|milk \(or almond milk\)|greek yogurt|plain yogurt|sour cream|cottage cheese|cream cheese|cheddar cheese, shredded|monterey jack cheese|mozzarella cheese, shredded|parmesan cheese|feta cheese|feta cheese, crumbled|fresh mozzarella|fresh mozzarella balls|heavy cream|butter)$/i,
+      // Refined sugars & ingredients
+      /^(brown sugar|cornstarch|tamarind paste)$/i,
+    ],
+  },
+  atkins: {
+    // Similar to keto but slightly more permissive — allows honey/maple syrup
+    // in trace recipe amounts and is less strict about hidden sugars.
+    excludePatterns: [
+      /^(spaghetti|linguine|rotini pasta|rice noodles|cooked rice|cooked brown rice|cooked basmati rice|cooked jasmine rice|cooked sushi rice|cooked quinoa|rolled oats|granola|all-purpose flour|breadcrumbs|flour tortillas?|large flour tortilla|corn tortillas|whole-grain bread|whole-grain bagel|ciabatta rolls|pita bread|burger buns)$/i,
+      /^(black beans|kidney beans|pinto beans|brown lentils|edamame|chickpeas)$/i,
+      /^(banana|fresh mango|frozen mango|frozen pineapple|apple|brown sugar|apple cider)$/i,
+      /^(baby potatoes)$/i,
+    ],
+  },
+  mediterranean: {
+    // No hard exclusions — Mediterranean is about emphasis, not avoidance.
+    // Scoring boost applied in generatePlan for `mediterranean` cuisine tag.
+    excludePatterns: [],
+    cuisineBoost: 'mediterranean',
+  },
+};
+
+function mealMatchesDiet(meal, dietKey) {
+  if (!dietKey || dietKey === 'none') return true;
+  const rules = DIET_RULES[dietKey];
+  if (!rules || rules.excludePatterns.length === 0) return true;
+  for (const ing of meal.ingredients) {
+    const name = ing.item.toLowerCase().trim();
+    for (const pat of rules.excludePatterns) {
+      if (pat.test(name)) return false;
+    }
+  }
+  return true;
+}
+
+const HOUSEHOLD_OPTIONS = [1,2,3,4,5,6,7,8];
+
+const APPETITE_OPTIONS = [
+  {key:'less',     label:'A little less', cal:1750},
+  {key:'standard', label:'Standard',      cal:2000},
+  {key:'more',     label:'A little more', cal:2400},
+];
+
+/* ============================================================
+ *  PORTION SCALING — PER-PERSON APPETITE BREAKDOWN
+ *  Each household member is assigned an appetite size. Cooking
+ *  is scaled to the SUM of actual portions. Shopping is sized
+ *  to the WORST CASE (everyone eating the largest portion) so
+ *  you never run short.
+ * ============================================================ */
+const APPETITE_FACTOR = {
+  'less':     1750 / 2000,  // 0.875
+  'standard': 2000 / 2000,  // 1.000
+  'more':     2400 / 2000,  // 1.200
+};
+
+// Cooking multiplier: how much to actually prepare for this meal
+function getCookingMultiplier(meal) {
+  const b = state.appetiteBreakdown;
+  const portionEquiv =
+    (b.less     * APPETITE_FACTOR.less)     +
+    (b.standard * APPETITE_FACTOR.standard) +
+    (b.more     * APPETITE_FACTOR.more);
+  return portionEquiv / meal.servings;
+}
+
+// Shopping multiplier: ceiling — assume everyone eats the largest portion
+function getShoppingMultiplier(meal) {
+  const ceiling = state.householdSize * APPETITE_FACTOR.more;
+  return ceiling / meal.servings;
+}
+
+// Round scaled qty to a cooking-friendly precision based on unit
+function roundQty(qty, unit) {
+  if (unit === 'whole' || unit === 'leaf' || unit === 'slice' || unit === 'pinch' || unit === 'head') {
+    return Math.max(1, Math.ceil(qty));
+  }
+  if (unit === 'cup') return Math.round(qty * 8) / 8;
+  return Math.round(qty * 4) / 4;
+}
+
+// Per-meal scaling for recipe modal: multiply and round in one step
+function scaleQty(qty, unit, mult) {
+  return roundQty(qty * mult, unit);
+}
+
+// Weighted average daily calories across the household
+function getWeightedDailyCalories() {
+  const b = state.appetiteBreakdown;
+  const total = b.less + b.standard + b.more;
+  if (total === 0) return 2000;
+  return ((b.less * 1750) + (b.standard * 2000) + (b.more * 2400)) / total;
+}
+
+function getWeightedCaloriesPerMeal() {
+  return Math.round(getWeightedDailyCalories() / 3);
+}
+
+// Plain-language breakdown like "1 small + 1 standard + 2 large" or "4 standard"
+function describeAppetiteBreakdown() {
+  const b = state.appetiteBreakdown;
+  const total = b.less + b.standard + b.more;
+  if (total === 0) return '';
+  if (b.less === total)     return `${total} small ${total === 1 ? 'appetite' : 'appetites'}`;
+  if (b.standard === total) return `${total} standard ${total === 1 ? 'appetite' : 'appetites'}`;
+  if (b.more === total)     return `${total} large ${total === 1 ? 'appetite' : 'appetites'}`;
+  const parts = [];
+  if (b.less > 0)     parts.push(`${b.less} small`);
+  if (b.standard > 0) parts.push(`${b.standard} standard`);
+  if (b.more > 0)     parts.push(`${b.more} large`);
+  return parts.join(' + ');
+}
+
+/* ============================================================
+ *  STATE
+ * ============================================================ */
+const state = {
+  cuisines: new Set(),
+  proteins: new Set(),
+  allergies: new Set(),
+  dislikes: [],
+  householdSize: 2,
+  appetiteBreakdown: {less: 0, standard: 2, more: 0},
+  diet: 'none',
+  plan: null,
+  shoppingList: null,
+  selectedStore: null,
+};
+
+/* ============================================================
+ *  INIT — render chip selectors
+ * ============================================================ */
+function renderChips(containerId, items, stateSet, isAllergy=false) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  items.forEach(it => {
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (isAllergy ? ' allergy-base' : '');
+    chip.dataset.key = it.key;
+    chip.innerHTML = `<svg class="check" viewBox="0 0 14 14" fill="none"><path d="M2 7l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${it.label}`;
+    chip.addEventListener('click', () => {
+      if (stateSet.has(it.key)) {
+        stateSet.delete(it.key);
+        chip.classList.remove('selected');
+        if (isAllergy) chip.classList.remove('allergy');
+      } else {
+        stateSet.add(it.key);
+        chip.classList.add('selected');
+        if (isAllergy) chip.classList.add('allergy');
+      }
+    });
+    container.appendChild(chip);
+  });
+}
+
+renderChips('cuisine-chips', CUISINES, state.cuisines);
+renderChips('protein-chips', PROTEINS, state.proteins);
+renderChips('allergy-chips', ALLERGIES, state.allergies, true);
+
+function renderHouseholdChips() {
+  const container = document.getElementById('household-chips');
+  container.innerHTML = '';
+  HOUSEHOLD_OPTIONS.forEach(n => {
+    const chip = document.createElement('button');
+    chip.className = 'chip-number' + (state.householdSize === n ? ' selected' : '');
+    chip.textContent = n === 8 ? '8+' : n;
+    chip.addEventListener('click', () => {
+      state.householdSize = n;
+      // Reset appetite breakdown to all-standard when household changes
+      state.appetiteBreakdown = {less: 0, standard: n, more: 0};
+      renderHouseholdChips();
+      renderAppetiteBreakdown();
+    });
+    container.appendChild(chip);
+  });
+}
+
+function renderAppetiteBreakdown() {
+  const container = document.getElementById('appetite-breakdown');
+  const b = state.appetiteBreakdown;
+  const total = state.householdSize;
+
+  // Self-heal: ensure sum always equals household
+  if (b.less + b.standard + b.more !== total) {
+    b.less = 0; b.standard = total; b.more = 0;
+  }
+
+  container.innerHTML = '';
+  const rows = [
+    {key:'less',     label:'A little less', cal:1750, editable: true},
+    {key:'standard', label:'Standard',      cal:2000, editable: false},
+    {key:'more',     label:'A little more', cal:2400, editable: true},
+  ];
+
+  rows.forEach(row => {
+    const div = document.createElement('div');
+    const count = b[row.key];
+    div.className = 'appetite-stepper-row' + (count > 0 && row.editable ? ' active' : '');
+
+    if (row.editable) {
+      const canDecrement = count > 0;
+      const canIncrement = b.standard > 0;
+      div.innerHTML = `
+        <div class="stepper-label">
+          <span class="name">${row.label}</span>
+          <span class="cal">${row.cal.toLocaleString()} cal / day</span>
+        </div>
+        <div class="stepper-controls">
+          <button class="stepper-btn dec" ${canDecrement ? '' : 'disabled'} aria-label="Decrease ${row.label}">−</button>
+          <span class="stepper-count">${count}</span>
+          <button class="stepper-btn inc" ${canIncrement ? '' : 'disabled'} aria-label="Increase ${row.label}">+</button>
+        </div>
+      `;
+      div.querySelector('.dec').addEventListener('click', () => {
+        if (b[row.key] > 0) {
+          b[row.key]--;
+          b.standard++;
+          renderAppetiteBreakdown();
+        }
+      });
+      div.querySelector('.inc').addEventListener('click', () => {
+        if (b.standard > 0) {
+          b[row.key]++;
+          b.standard--;
+          renderAppetiteBreakdown();
+        }
+      });
+    } else {
+      // Standard row is the auto-balancer
+      div.innerHTML = `
+        <div class="stepper-label">
+          <span class="name">${row.label}</span>
+          <span class="cal">${row.cal.toLocaleString()} cal / day · default</span>
+        </div>
+        <div class="stepper-controls stepper-readonly">
+          <span class="stepper-count standard-count">${count}</span>
+          <span class="stepper-hint">remaining</span>
+        </div>
+      `;
+    }
+    container.appendChild(div);
+  });
+}
+
+function renderDietChips() {
+  const container = document.getElementById('diet-chips');
+  container.innerHTML = '';
+  DIETS.forEach(diet => {
+    const chip = document.createElement('button');
+    const isNone = diet.key === 'none';
+    chip.className = 'chip-diet' +
+      (isNone ? ' none-option' : '') +
+      (state.diet === diet.key ? ' selected' : '');
+    chip.textContent = diet.label;
+    chip.addEventListener('click', () => {
+      state.diet = diet.key;
+      renderDietChips();
+    });
+    container.appendChild(chip);
+  });
+}
+
+renderHouseholdChips();
+renderAppetiteBreakdown();
+renderDietChips();
+
+/* ============================================================
+ *  NAVIGATION
+ * ============================================================ */
+function goTo(viewKey) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const map = {
+    welcome:'view-welcome', preferences:'view-preferences',
+    plan:'view-plan', shopping:'view-shopping'
+  };
+  document.getElementById(map[viewKey]).classList.add('active');
+  updateSteps(viewKey);
+  window.scrollTo({top: 0, behavior:'smooth'});
+}
+
+function updateSteps(viewKey) {
+  const order = ['welcome','preferences','plan','shopping'];
+  const idx = order.indexOf(viewKey);
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.remove('active','done');
+    if (i < idx) el.classList.add('done');
+    if (i === idx) el.classList.add('active');
+  });
+}
+
+/* ============================================================
+ *  PLAN GENERATION
+ * ============================================================ */
+async function generatePlan(reshuffle=false) {
+  // Ensure recipes are loaded before generating
+  if (!mealsReady) {
+    const btn = document.querySelector('#view-preferences .btn-primary');
+    if (btn) { btn.textContent = 'Loading recipes…'; btn.disabled = true; }
+    await loadMeals();
+    if (btn) { btn.innerHTML = 'Generate my week <span class="arrow">→</span>'; btn.disabled = false; }
+  }
+
+  if (MEALS.length === 0) {
+    alert('No recipes loaded yet. Please check your connection and try again.');
+    return;
+  }
+
+  // Parse dislikes
+  state.dislikes = document.getElementById('dislikes-input').value
+    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+  // Filter pool
+  const pool = MEALS.filter(meal => {
+    // Allergen exclusion - strict
+    for (const allergen of meal.allergens) {
+      if (state.allergies.has(allergen)) return false;
+    }
+    // Dislike exclusion - any ingredient that contains a dislike substring
+    for (const ing of meal.ingredients) {
+      for (const dis of state.dislikes) {
+        if (ing.item.toLowerCase().includes(dis)) return false;
+      }
+    }
+    // Diet exclusion - strict for keto / paleo / atkins
+    if (!mealMatchesDiet(meal, state.diet)) return false;
+    return true;
+  });
+
+  // Score remaining meals
+  function score(meal) {
+    let s = 0;
+    if (state.cuisines.size > 0) {
+      for (const c of meal.cuisines) if (state.cuisines.has(c)) s += 3;
+    } else {
+      s += 1; // no preference, neutral
+    }
+    if (state.proteins.size > 0) {
+      let hasMatch = false;
+      for (const p of meal.proteins) if (state.proteins.has(p)) { hasMatch = true; s += 2; }
+      if (!hasMatch && meal.proteins.length > 0) s -= 1;
+    } else {
+      s += 1;
+    }
+    // Mediterranean diet preference: boost Mediterranean cuisine meals
+    if (state.diet === 'mediterranean' && meal.cuisines.includes('mediterranean')) {
+      s += 5;
+    }
+    s += Math.random() * 1.5; // randomization for variety
+    return s;
+  }
+
+  function pickWeek(type) {
+    const byType = pool.filter(m => m.type === type)
+      .map(m => ({m, sc: score(m)}))
+      .sort((a,b) => b.sc - a.sc);
+
+    // Take top portion, then shuffle, then pick 7 with no immediate repeats
+    const top = byType.slice(0, Math.max(7, Math.floor(byType.length * 0.7)));
+    const result = [];
+    const usedIds = new Set();
+
+    for (let i = 0; i < 7; i++) {
+      // Find next meal not used; if all used, allow reuse
+      let chosen = top.find(x => !usedIds.has(x.m.id));
+      if (!chosen) chosen = top[i % top.length];
+      if (!chosen) {
+        // Fallback: any meal of this type, ignoring filters? Better to use any from pool
+        const any = pool.filter(m => m.type === type);
+        if (any.length === 0) { result.push(null); continue; }
+        chosen = {m: any[i % any.length]};
+      }
+      result.push(chosen.m);
+      usedIds.add(chosen.m.id);
+      // Re-randomize tail to mix order
+      top.sort((a,b) => Math.random() - 0.5);
+    }
+    return result;
+  }
+
+  const breakfasts = pickWeek('breakfast');
+  const lunches = pickWeek('lunch');
+  const dinners = pickWeek('dinner');
+
+  // Check coverage
+  const missingTypes = [];
+  if (breakfasts.includes(null)) missingTypes.push('breakfasts');
+  if (lunches.includes(null)) missingTypes.push('lunches');
+  if (dinners.includes(null)) missingTypes.push('dinners');
+
+  const days = [];
+  const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const today = new Date();
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today.getTime() + i * 86400000);
+    days.push({
+      name: dayNames[i],
+      date: date.toLocaleDateString('en-US', {month:'short', day:'numeric'}),
+      breakfast: breakfasts[i],
+      lunch: lunches[i],
+      dinner: dinners[i],
+    });
+  }
+  state.plan = {days, missingTypes};
+  renderPlan();
+  goTo('plan');
+}
+
+/* ============================================================
+ *  RENDER PLAN
+ * ============================================================ */
+function renderPlan() {
+  const grid = document.getElementById('week-grid');
+  const alertEl = document.getElementById('plan-alert');
+  const subtitle = document.getElementById('plan-subtitle');
+
+  alertEl.innerHTML = '';
+  if (state.plan.missingTypes.length > 0) {
+    alertEl.innerHTML = `<div class="alert">
+      <span>⚠</span>
+      <div><strong>Heads up:</strong> Your filters left no options for ${state.plan.missingTypes.join(', ')}. Try removing one allergy or dislike for more variety.</div>
+    </div>`;
+  }
+
+  // Build subtitle from prefs
+  const subParts = [];
+  const householdLabel = `${state.householdSize} ${state.householdSize === 1 ? 'person' : 'people'}`;
+  subParts.push(householdLabel);
+  subParts.push(describeAppetiteBreakdown());
+  if (state.diet !== 'none') {
+    const dietLabel = DIETS.find(d => d.key === state.diet).label;
+    subParts.push(`${dietLabel} diet`);
+  }
+  if (state.cuisines.size > 0) subParts.push(`${state.cuisines.size} cuisine${state.cuisines.size>1?'s':''}`);
+  if (state.proteins.size > 0) subParts.push(`${state.proteins.size} protein${state.proteins.size>1?'s':''}`);
+  if (state.allergies.size > 0) subParts.push(`${state.allergies.size} allerg${state.allergies.size>1?'ies':'y'} avoided`);
+  if (state.dislikes.length > 0) subParts.push(`${state.dislikes.length} dislike${state.dislikes.length>1?'s':''} filtered`);
+  subtitle.textContent = `Built for ${subParts.filter(Boolean).join(' · ')}. Tap any meal for the recipe.`;
+
+  const calPerMeal = getWeightedCaloriesPerMeal();
+  const b = state.appetiteBreakdown;
+  const isMixedAppetite = [b.less, b.standard, b.more].filter(n => n > 0).length > 1;
+
+  grid.innerHTML = '';
+  state.plan.days.forEach(day => {
+    const col = document.createElement('div');
+    col.className = 'day-column';
+    col.innerHTML = `
+      <div class="day-header">
+        <div class="day-name">${day.name}</div>
+        <div class="day-date">${day.date}</div>
+      </div>
+    `;
+    ['breakfast','lunch','dinner'].forEach(type => {
+      const meal = day[type];
+      const card = document.createElement('div');
+      if (!meal) {
+        card.className = 'meal-card';
+        card.innerHTML = `<div class="meal-tag">${type}</div><div class="meal-name" style="color:var(--ink-muted);font-style:italic">No option</div>`;
+        col.appendChild(card);
+        return;
+      }
+      card.className = 'meal-card ' + type;
+      card.innerHTML = `
+        <div class="meal-tag">${type}</div>
+        <div class="meal-name">${meal.name}</div>
+        <div class="meal-meta">
+          <span>⏱ ${meal.prep} min</span>
+          <span>· ~${calPerMeal} cal${isMixedAppetite ? ' avg' : ''}</span>
+        </div>
+        <div class="view-recipe-link">View recipe <span>→</span></div>
+      `;
+      card.addEventListener('click', () => openRecipe(meal));
+      col.appendChild(card);
+    });
+    grid.appendChild(col);
+  });
+}
+
+/* ============================================================
+ *  RECIPE MODAL
+ * ============================================================ */
+function fmtQty(qty, unit) {
+  // Convert decimals to readable fractions
+  const fractions = {0.125:'⅛', 0.25:'¼', 0.33:'⅓', 0.5:'½', 0.66:'⅔', 0.75:'¾'};
+  let q = qty;
+  let prefix = '';
+  if (q >= 1) {
+    const whole = Math.floor(q);
+    const rem = +(q - whole).toFixed(2);
+    let fracStr = '';
+    for (const [k, v] of Object.entries(fractions)) {
+      if (Math.abs(rem - +k) < 0.04) { fracStr = v; break; }
+    }
+    if (fracStr) prefix = `${whole}${fracStr}`;
+    else if (rem < 0.04) prefix = `${whole}`;
+    else prefix = `${q}`;
+  } else {
+    let fracStr = '';
+    for (const [k, v] of Object.entries(fractions)) {
+      if (Math.abs(q - +k) < 0.04) { fracStr = v; break; }
+    }
+    prefix = fracStr || `${q}`;
+  }
+  if (!unit || unit === 'whole') return prefix + (qty > 1 && !unit ? '' : '');
+  return `${prefix} ${unit}${qty > 1 && !['tsp','tbsp','cup','oz','lb','ml','g'].includes(unit) ? '' : ''}`;
+}
+
+function openRecipe(meal) {
+  const modal = document.getElementById('recipe-modal');
+  const content = document.getElementById('recipe-modal-content');
+  const cuisineLabel = meal.cuisines.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(' · ');
+
+  // COOKING multiplier — actual food prepared for the mix of appetites
+  const cookMult = getCookingMultiplier(meal);
+  // SHOPPING multiplier — what's bought (max-portion ceiling)
+  const shopMult = getShoppingMultiplier(meal);
+
+  const breakdownStr = describeAppetiteBreakdown();
+  const b = state.appetiteBreakdown;
+  const isMixed = [b.less, b.standard, b.more].filter(n => n > 0).length > 1;
+  const calRange = isMixed
+    ? `${Math.round(1750/3)} / ${Math.round(2000/3)} / ${Math.round(2400/3)}`
+    : `${getWeightedCaloriesPerMeal()}`;
+  const calLabel = isMixed ? 'Cal small / std / large' : 'Cal per portion';
+
+  content.innerHTML = `
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-eyebrow">${meal.type} · ${cuisineLabel}</div>
+      <h3>${meal.name}</h3>
+      <div class="modal-meta">
+        <div><span class="key">Prep & cook</span><span class="val">${meal.prep} min</span></div>
+        <div><span class="key">Cooks for</span><span class="val">${breakdownStr}</span></div>
+        <div><span class="key">${calLabel}</span><span class="val">${calRange}</span></div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <h4>Ingredients <span style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--ink-muted);letter-spacing:.12em;font-weight:400;margin-left:6px">scaled to actual portions cooked</span></h4>
+        <ul class="ingredient-list">
+          ${meal.ingredients.map(i => {
+            const scaled = scaleQty(i.qty, i.unit || 'whole', cookMult);
+            return `
+            <li>
+              <span>${i.item}</span>
+              <span class="qty">${fmtQty(scaled, i.unit)}</span>
+            </li>`;
+          }).join('')}
+        </ul>
+        ${isMixed ? `<div style="margin-top:14px;padding:10px 12px;background:rgba(196,149,74,.08);border-radius:6px;font-size:12px;color:#8a6824;line-height:1.5">
+          <strong style="font-family:'Fraunces',serif;font-style:italic">Note:</strong> shopping list contains a small buffer in case appetites run larger than expected.
+        </div>` : ''}
+      </div>
+      <div class="modal-section">
+        <h4>Method</h4>
+        <ol class="instructions">
+          ${meal.steps.map(s => `<li>${s}</li>`).join('')}
+        </ol>
+      </div>
+    </div>
+  `;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('recipe-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeModalOnBackdrop(e) {
+  if (e.target.id === 'recipe-modal') closeModal();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+/* ============================================================
+ *  SHOPPING LIST
+ * ============================================================ */
+function buildShoppingList() {
+  const map = {}; // key: lowercase item — value: {item, qtyByUnit (RAW sums), category}
+  state.plan.days.forEach(day => {
+    ['breakfast','lunch','dinner'].forEach(type => {
+      const meal = day[type];
+      if (!meal) return;
+      // SHOPPING uses the MAX-APPETITE ceiling so we never run short
+      const mult = getShoppingMultiplier(meal);
+      meal.ingredients.forEach(ing => {
+        const key = ing.item.toLowerCase();
+        if (!map[key]) {
+          map[key] = {item: ing.item, qtyByUnit: {}, category: ing.category};
+        }
+        const unitKey = ing.unit || 'whole';
+        // Accumulate RAW scaled value; rounding happens once at the end so
+        // small per-recipe round-ups don't compound across the week.
+        map[key].qtyByUnit[unitKey] = (map[key].qtyByUnit[unitKey] || 0) + (ing.qty * mult);
+      });
+    });
+  });
+
+  // Now round each accumulated total once per unit, with unit-aware precision
+  Object.values(map).forEach(entry => {
+    Object.keys(entry.qtyByUnit).forEach(unitKey => {
+      entry.qtyByUnit[unitKey] = roundQty(entry.qtyByUnit[unitKey], unitKey);
+    });
+  });
+
+  // Group by category
+  const grouped = {};
+  Object.values(map).forEach(entry => {
+    const cat = entry.category || 'other';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(entry);
+  });
+
+  // Sort items within each category
+  Object.values(grouped).forEach(arr => arr.sort((a,b) => a.item.localeCompare(b.item)));
+
+  state.shoppingList = grouped;
+}
+
+function showShoppingList() {
+  buildShoppingList();
+  // Update subtitle with household / appetite breakdown context
+  const sub = document.getElementById('shopping-subtitle');
+  const peopleLabel = `${state.householdSize} ${state.householdSize === 1 ? 'person' : 'people'}`;
+  const breakdown = describeAppetiteBreakdown();
+  const b = state.appetiteBreakdown;
+  const isMixed = [b.less, b.standard, b.more].filter(n => n > 0).length > 1;
+  const allLarge = b.more === state.householdSize;
+  let extra = '';
+  if (!allLarge) {
+    extra = ' Quantities cover everyone eating large portions, so you never run short.';
+  }
+  sub.textContent = `One week for ${peopleLabel} (${breakdown}).${extra}`;
+  renderStoreChips();
+  renderShoppingList();
+  goTo('shopping');
+}
+
+function renderStoreChips() {
+  const container = document.getElementById('store-chips');
+  container.innerHTML = '';
+  STORES.forEach(store => {
+    const chip = document.createElement('button');
+    chip.className = 'store-chip' + (state.selectedStore === store.key ? ' selected' : '');
+    chip.textContent = store.label;
+    chip.addEventListener('click', () => selectStore(store.key));
+    container.appendChild(chip);
+  });
+  // "No store" option
+  const none = document.createElement('button');
+  none.className = 'store-chip none-option' + (state.selectedStore === null ? ' selected' : '');
+  none.textContent = 'Skip coupons';
+  none.addEventListener('click', () => selectStore(null));
+  container.appendChild(none);
+}
+
+function selectStore(storeKey) {
+  state.selectedStore = storeKey;
+  renderStoreChips();
+  renderShoppingList();
+}
+
+function renderShoppingList() {
+  const grid = document.getElementById('shopping-grid');
+  const banner = document.getElementById('savings-banner');
+  const amountEl = document.getElementById('savings-amount');
+  const detailEl = document.getElementById('savings-detail');
+  grid.innerHTML = '';
+
+  const categoryLabels = {
+    produce:  {name: 'Produce',         emoji: '🥬'},
+    proteins: {name: 'Meat & Seafood',  emoji: '🥩'},
+    dairy:    {name: 'Dairy & Eggs',    emoji: '🥚'},
+    bakery:   {name: 'Bakery & Bread',  emoji: '🍞'},
+    pantry:   {name: 'Pantry',          emoji: '🫙'},
+    frozen:   {name: 'Frozen',          emoji: '🧊'},
+    other:    {name: 'Other',           emoji: '🛒'},
+  };
+  const order = ['produce','proteins','dairy','bakery','pantry','frozen','other'];
+
+  let totalSavings = 0;
+  let couponCount = 0;
+  const storeKey = state.selectedStore;
+  const storeName = storeKey ? STORES.find(s => s.key === storeKey).label : null;
+
+  order.forEach(cat => {
+    const items = state.shoppingList[cat];
+    if (!items || items.length === 0) return;
+    const meta = categoryLabels[cat];
+    const card = document.createElement('div');
+    card.className = 'shop-category';
+
+    const itemsHtml = items.map(it => {
+      const purchaseText = findPurchase(it.item, it.qtyByUnit);
+      const coupon = matchCoupon(it.item, storeKey);
+      if (coupon) { totalSavings += coupon.amount; couponCount++; }
+
+      return `<li onclick="this.classList.toggle('checked')"
+        class="${coupon ? 'has-coupon' : ''}">
+        <span class="box"></span>
+        <span class="item-content">
+          <span class="item-top">
+            <span class="item-name">${it.item}</span>
+            <span class="qty">${purchaseText}</span>
+          </span>
+          ${coupon ? `<span class="coupon-badge">${coupon.label}</span>` : ''}
+        </span>
+      </li>`;
+    }).join('');
+
+    card.innerHTML = `
+      <h3>${meta.emoji} ${meta.name}</h3>
+      <span class="count">${items.length} item${items.length>1?'s':''}</span>
+      <ul class="shop-list">${itemsHtml}</ul>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Update savings banner
+  if (storeKey && couponCount > 0) {
+    banner.classList.add('visible');
+    amountEl.textContent = `$${totalSavings.toFixed(2)}`;
+    detailEl.textContent = `${couponCount} coupon${couponCount>1?'s':''} matched at ${storeName}`;
+  } else if (storeKey && couponCount === 0) {
+    banner.classList.add('visible');
+    amountEl.textContent = '$0.00';
+    detailEl.textContent = `No matching coupons at ${storeName} this week`;
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+/* ============================================================
+ *  RESET
+ * ============================================================ */
+function resetAll() {
+  state.cuisines.clear();
+  state.proteins.clear();
+  state.allergies.clear();
+  state.dislikes = [];
+  state.plan = null;
+  state.selectedStore = null;
+  state.householdSize = 2;
+  state.appetiteBreakdown = {less: 0, standard: 2, more: 0};
+  state.diet = 'none';
+  document.getElementById('dislikes-input').value = '';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected','allergy'));
+  renderHouseholdChips();
+  renderAppetiteBreakdown();
+  renderDietChips();
+  goTo('welcome');
+}
+</script>
+</body>
+</html>
