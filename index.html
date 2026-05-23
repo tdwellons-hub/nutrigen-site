@@ -767,6 +767,28 @@
     box-shadow: 0 0 0 2px rgba(61,90,61,.15);
   }
   .meal-card.selected::before { opacity: 1 !important; }
+  .difficulty-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 3px 8px;
+    border-radius: 20px; margin-top: 2px;
+  }
+  .difficulty-badge.super_quick {
+    background: rgba(16,185,129,.12); color: #059669;
+    border: 1px solid rgba(16,185,129,.25);
+  }
+  .difficulty-badge.easy {
+    background: rgba(61,90,61,.1); color: var(--sage-deep);
+    border: 1px solid rgba(61,90,61,.2);
+  }
+  .difficulty-badge.medium {
+    background: rgba(196,149,74,.12); color: #92660a;
+    border: 1px solid rgba(196,149,74,.25);
+  }
+  .difficulty-badge.hard {
+    background: rgba(185,28,28,.08); color: #b91c1c;
+    border: 1px solid rgba(185,28,28,.2);
+  }
   .plan-hint {
     font-size: 12px; color: var(--ink-muted);
     margin: 4px 0 24px; letter-spacing: 0.02em;
@@ -1576,11 +1598,23 @@
 
 
 
+    <!-- Difficulty preference -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">06 / Difficulty</span>
+          What's your <em>cooking comfort level?</em>
+        </div>
+        <div class="hint">Filter meals by how much time and effort you want to spend.</div>
+      </div>
+      <div class="chip-grid" id="difficulty-chips"></div>
+    </div>
+
     <!-- Dietary protocol -->
     <div class="pref-section">
       <div>
         <div class="label">
-          <span class="num">06 / Diet</span>
+          <span class="num">07 / Diet</span>
           Following a <em>specific diet?</em>
         </div>
         <div class="hint">Optional. Meals will be filtered to match your protocol.</div>
@@ -1717,6 +1751,14 @@ setTimeout(() => {
  *  Shape mirrors the original hardcoded array so all existing
  *  plan generation, filtering, and rendering logic is unchanged.
  * ============================================================ */
+const DIFFICULTIES = [
+  { key: 'any',        label: '⭐ Any Level' },
+  { key: 'super_quick', label: '⚡ Super Quick' },
+  { key: 'easy',       label: '🟢 Easy' },
+  { key: 'medium',     label: '🟡 Medium' },
+  { key: 'hard',       label: '🔴 Hard' },
+];
+
 let MEALS = [];
 let mealsReady = false;
 let mealsLoadPromise = null;
@@ -1808,6 +1850,7 @@ async function loadMeals() {
           unit:     i.unit || null,
           category: i.category || 'pantry',
         })),
+        difficulty: r.difficulty || 'medium',
         steps: (stepByRecipe[r.id] || [])
           .sort((a, b) => a.step_order - b.step_order)
           .map(s => s.instruction),
@@ -2906,6 +2949,7 @@ const state = {
   householdSize: 2,
   appetiteBreakdown: {less: 0, standard: 2, more: 0},
   diet: 'none',
+  difficulty: 'any',
   plan: null,
   shoppingList: null,
   selectedStore: null,
@@ -3023,6 +3067,22 @@ function renderAppetiteBreakdown() {
   });
 }
 
+function renderDifficultyChips() {
+  const container = document.getElementById('difficulty-chips');
+  if (!container) return;
+  container.innerHTML = '';
+  DIFFICULTIES.forEach(d => {
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (state.difficulty === d.key ? ' selected' : '');
+    chip.textContent = d.label;
+    chip.addEventListener('click', () => {
+      state.difficulty = d.key;
+      renderDifficultyChips();
+    });
+    container.appendChild(chip);
+  });
+}
+
 function renderDietChips() {
   const container = document.getElementById('diet-chips');
   container.innerHTML = '';
@@ -3042,6 +3102,7 @@ function renderDietChips() {
 }
 
 renderHouseholdChips();
+renderDifficultyChips();
 renderDietChips();
 
 /* ============================================================
@@ -3105,6 +3166,10 @@ async function generatePlan(reshuffle=false) {
     }
     // Diet exclusion - strict for keto / paleo / atkins
     if (!mealMatchesDiet(meal, state.diet)) return false;
+    // Difficulty filter
+    if (state.difficulty && state.difficulty !== 'any') {
+      if (meal.difficulty !== state.difficulty) return false;
+    }
     return true;
   });
 
@@ -3284,6 +3349,7 @@ function renderPlan() {
           <span>⏱ ${meal.prep} min</span>
           <span>· ~${calPerMeal} cal/serving</span>
         </div>
+        ${(() => { const d = getDifficultyLabel(meal.difficulty); return \`<span class="difficulty-badge \${d.cls}">\${d.label}</span>\`; })()}
         <div class="view-recipe-link">View recipe <span>→</span></div>
       `;
       // Restore selected state visually after reshuffle
@@ -3433,6 +3499,16 @@ document.addEventListener('keydown', e => {
 /* ============================================================
  *  SHOPPING LIST
  * ============================================================ */
+function getDifficultyLabel(difficulty) {
+  const map = {
+    super_quick: { label: '⚡ Super Quick', cls: 'super_quick' },
+    easy:        { label: '🟢 Easy',        cls: 'easy' },
+    medium:      { label: '🟡 Medium',      cls: 'medium' },
+    hard:        { label: '🔴 Hard',        cls: 'hard' },
+  };
+  return map[difficulty] || map['medium'];
+}
+
 function buildShoppingList() {
   const map = {}; // key: lowercase item — value: {item, qtyByUnit (RAW sums), category}
   state.plan.days.forEach(day => {
@@ -3594,10 +3670,12 @@ function resetAll() {
   state.selectedStore = null;
   state.householdSize = 2;
   state.selectedSlots = new Set();
+  state.difficulty = 'any';
   state.diet = 'none';
   document.getElementById('dislikes-input').value = '';
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected','allergy'));
   renderHouseholdChips();
+  renderDifficultyChips();
     renderDietChips();
   goTo('welcome');
 }
