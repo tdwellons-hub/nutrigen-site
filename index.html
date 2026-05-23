@@ -746,6 +746,28 @@
     box-shadow: var(--shadow-sm);
   }
   .meal-card:hover::before { opacity: 1; }
+  .meal-card .remove-meal-btn {
+    position: absolute; top: 8px; right: 8px;
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-elev);
+    cursor: pointer; font-size: 11px; color: var(--ink-muted);
+    display: grid; place-items: center;
+    opacity: 0; transition: opacity .15s ease, background .15s ease;
+    z-index: 2; padding: 0; line-height: 1;
+  }
+  .meal-card:hover .remove-meal-btn { opacity: 1; }
+  .meal-card .remove-meal-btn:hover {
+    background: #fee2e2; border-color: #fca5a5; color: #dc2626;
+  }
+  .plating-note {
+    margin-top: 14px; padding: 12px 16px;
+    background: rgba(61,90,61,.06);
+    border: 1px solid var(--line);
+    border-radius: 8px; font-size: 13px;
+    line-height: 1.6; color: var(--ink-soft);
+  }
+  .plating-note strong { color: var(--ink); }
 
   .meal-card.breakfast::before { background: var(--gold); }
   .meal-card.lunch::before { background: var(--sage); }
@@ -1536,23 +1558,13 @@
       <div class="chip-grid" id="household-chips"></div>
     </div>
 
-    <!-- Appetite breakdown -->
-    <div class="pref-section">
-      <div>
-        <div class="label">
-          <span class="num">06 / Appetites</span>
-          How big <em>are the appetites?</em>
-        </div>
-        <div class="hint">Assign each eater a portion size. The default is Standard. Shopping is sized for the largest appetite to avoid running short.</div>
-      </div>
-      <div class="appetite-breakdown" id="appetite-breakdown"></div>
-    </div>
+
 
     <!-- Dietary protocol -->
     <div class="pref-section">
       <div>
         <div class="label">
-          <span class="num">07 / Diet</span>
+          <span class="num">06 / Diet</span>
           Following a <em>specific diet?</em>
         </div>
         <div class="hint">Optional. Meals will be filtered to match your protocol.</div>
@@ -1967,6 +1979,34 @@ function normalizeIngredientName(raw) {
     'cream of coconut':  'coconut milk',
     'coconut cream':     'coconut milk',
     'light coconut milk': 'coconut milk',
+    'rocket': 'arugula',
+    'swede': 'rutabaga',
+    'mangetout': 'snow peas',
+    'mange tout': 'snow peas',
+    'streaky bacon': 'bacon',
+    'mince': 'ground beef',
+    'minced beef': 'ground beef',
+    'courgettes': 'zucchini',
+    'beetroot': 'beets',
+    'cornflour': 'cornstarch',
+    'corn flour': 'cornstarch',
+    'icing sugar': 'powdered sugar',
+    'caster sugar': 'granulated sugar',
+    'single cream': 'light cream',
+    'self-raising flour': 'self-rising flour',
+    'self raising flour': 'self-rising flour',
+    'spring onions': 'green onion',
+    'king prawns': 'jumbo shrimp',
+    'tiger prawns': 'jumbo shrimp',
+    'passata': 'tomato sauce',
+    'creme fraiche': 'sour cream',
+    'natural yogurt': 'plain yogurt',
+    'natural yoghurt': 'plain yogurt',
+    'greek yoghurt': 'greek yogurt',
+    'porridge oats': 'rolled oats',
+    'tinned tomatoes': 'canned tomatoes',
+    'sweetcorn': 'corn',
+    'sweet corn': 'corn',
     'all purpose flour': 'all-purpose flour',
     'plain flour':       'all-purpose flour',
     'self-raising flour': 'all-purpose flour',
@@ -2792,18 +2832,12 @@ const APPETITE_FACTOR = {
 
 // Cooking multiplier: how much to actually prepare for this meal
 function getCookingMultiplier(meal) {
-  const b = state.appetiteBreakdown;
-  const portionEquiv =
-    (b.less     * APPETITE_FACTOR.less)     +
-    (b.standard * APPETITE_FACTOR.standard) +
-    (b.more     * APPETITE_FACTOR.more);
-  return portionEquiv / meal.servings;
+  return state.householdSize / meal.servings;
 }
 
 // Shopping multiplier: ceiling — assume everyone eats the largest portion
 function getShoppingMultiplier(meal) {
-  const ceiling = state.householdSize * APPETITE_FACTOR.more;
-  return ceiling / meal.servings;
+  return state.householdSize / meal.servings;
 }
 
 // Round scaled qty to a cooking-friendly precision based on unit
@@ -2822,10 +2856,7 @@ function scaleQty(qty, unit, mult) {
 
 // Weighted average daily calories across the household
 function getWeightedDailyCalories() {
-  const b = state.appetiteBreakdown;
-  const total = b.less + b.standard + b.more;
-  if (total === 0) return 2000;
-  return ((b.less * 1750) + (b.standard * 2000) + (b.more * 2400)) / total;
+  return 2000;
 }
 
 function getWeightedCaloriesPerMeal() {
@@ -2905,8 +2936,7 @@ function renderHouseholdChips() {
       // Reset appetite breakdown to all-standard when household changes
       state.appetiteBreakdown = {less: 0, standard: n, more: 0};
       renderHouseholdChips();
-      renderAppetiteBreakdown();
-    });
+          });
     container.appendChild(chip);
   });
 }
@@ -2951,15 +2981,13 @@ function renderAppetiteBreakdown() {
         if (b[row.key] > 0) {
           b[row.key]--;
           b.standard++;
-          renderAppetiteBreakdown();
-        }
+                  }
       });
       div.querySelector('.inc').addEventListener('click', () => {
         if (b.standard > 0) {
           b[row.key]++;
           b.standard--;
-          renderAppetiteBreakdown();
-        }
+                  }
       });
     } else {
       // Standard row is the auto-balancer
@@ -2997,7 +3025,6 @@ function renderDietChips() {
 }
 
 renderHouseholdChips();
-renderAppetiteBreakdown();
 renderDietChips();
 
 /* ============================================================
@@ -3028,6 +3055,8 @@ function updateSteps(viewKey) {
  *  PLAN GENERATION
  * ============================================================ */
 async function generatePlan(reshuffle=false) {
+  if (!reshuffle) state.removedSlots = new Set();
+  else if (!state.removedSlots) state.removedSlots = new Set();
   // Ensure recipes are loaded before generating
   if (!mealsReady) {
     const btn = document.querySelector('#view-preferences .btn-primary');
@@ -3173,8 +3202,7 @@ function renderPlan() {
   subtitle.textContent = `Built for ${subParts.filter(Boolean).join(' · ')}. Tap any meal for the recipe.`;
 
   const calPerMeal = getWeightedCaloriesPerMeal();
-  const b = state.appetiteBreakdown;
-  const isMixedAppetite = [b.less, b.standard, b.more].filter(n => n > 0).length > 1;
+    const isMixedAppetite = false;
 
   grid.innerHTML = '';
   state.plan.days.forEach(day => {
@@ -3195,16 +3223,28 @@ function renderPlan() {
         col.appendChild(card);
         return;
       }
+      const slotKey = `${day.name}-${type}`;
       card.className = 'meal-card ' + type;
+      card.dataset.slot = slotKey;
       card.innerHTML = `
+        <button class="remove-meal-btn" title="Remove this meal">✕</button>
         <div class="meal-tag">${type}</div>
         <div class="meal-name">${meal.name}</div>
         <div class="meal-meta">
           <span>⏱ ${meal.prep} min</span>
-          <span>· ~${calPerMeal} cal${isMixedAppetite ? ' avg' : ''}</span>
+          <span>· ~${calPerMeal} cal/serving</span>
         </div>
         <div class="view-recipe-link">View recipe <span>→</span></div>
       `;
+      card.querySelector('.remove-meal-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!state.removedSlots) state.removedSlots = new Set();
+        state.removedSlots.add(slotKey);
+        card.style.transition = 'opacity .2s ease, transform .2s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => card.remove(), 220);
+      });
       card.addEventListener('click', () => openRecipe(meal));
       col.appendChild(card);
     });
@@ -3283,9 +3323,24 @@ function openRecipe(meal) {
             </li>`;
           }).join('')}
         </ul>
-        ${isMixed ? `<div style="margin-top:14px;padding:10px 12px;background:rgba(196,149,74,.08);border-radius:6px;font-size:12px;color:#8a6824;line-height:1.5">
-          <strong style="font-family:'Fraunces',serif;font-style:italic">Note:</strong> shopping list contains a small buffer in case appetites run larger than expected.
-        </div>` : ''}
+        ${(() => {
+          const servings = meal.servings || 4;
+          const people = state.householdSize || 1;
+          const calEst = getWeightedCaloriesPerMeal();
+          let noteText = '';
+          if (servings !== people) {
+            noteText = people < servings
+              ? 'Plate smaller portions and refrigerate or freeze leftovers.'
+              : 'Consider scaling up ingredient quantities for your group.';
+          }
+          return '<div class=\"plating-note\">' +
+            (noteText
+              ? '<strong>Plating note:</strong> This recipe serves ' + servings +
+                ' \u2014 you have ' + people + ' eating. ' + noteText + '<br>'
+              : '') +
+            '<span style=\"font-size:12px;color:var(--ink-muted)\">~' + calEst +
+            ' cal/serving estimate</span></div>';
+        })()}
       </div>
       <div class="modal-section">
         <h4>Method</h4>
@@ -3318,7 +3373,8 @@ function buildShoppingList() {
     ['breakfast','lunch','dinner'].forEach(type => {
       const meal = day[type];
       if (!meal) return;
-      // SHOPPING uses the MAX-APPETITE ceiling so we never run short
+      const slotKey = `${day.name}-${type}`;
+      if (state.removedSlots && state.removedSlots.has(slotKey)) return;
       const mult = getShoppingMultiplier(meal);
       meal.ingredients.forEach(ing => {
         const key = ing.item.toLowerCase();
@@ -3359,15 +3415,7 @@ function showShoppingList() {
   // Update subtitle with household / appetite breakdown context
   const sub = document.getElementById('shopping-subtitle');
   const peopleLabel = `${state.householdSize} ${state.householdSize === 1 ? 'person' : 'people'}`;
-  const breakdown = describeAppetiteBreakdown();
-  const b = state.appetiteBreakdown;
-  const isMixed = [b.less, b.standard, b.more].filter(n => n > 0).length > 1;
-  const allLarge = b.more === state.householdSize;
-  let extra = '';
-  if (!allLarge) {
-    extra = ' Quantities cover everyone eating large portions, so you never run short.';
-  }
-  sub.textContent = `One week for ${peopleLabel} (${breakdown}).${extra}`;
+    sub.textContent = `One week of meals for ${state.householdSize} ${state.householdSize === 1 ? 'person' : 'people'}. Quantities scaled to your table.`;
   renderStoreChips();
   renderShoppingList();
   goTo('shopping');
@@ -3483,8 +3531,7 @@ function resetAll() {
   document.getElementById('dislikes-input').value = '';
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected','allergy'));
   renderHouseholdChips();
-  renderAppetiteBreakdown();
-  renderDietChips();
+    renderDietChips();
   goTo('welcome');
 }
 </script>
