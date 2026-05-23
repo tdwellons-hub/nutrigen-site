@@ -3349,7 +3349,7 @@ function renderPlan() {
           <span>⏱ ${meal.prep} min</span>
           <span>· ~${calPerMeal} cal/serving</span>
         </div>
-        ${(() => { const d = getDifficultyLabel(meal.difficulty); return \`<span class="difficulty-badge \${d.cls}">\${d.label}</span>\`; })()}
+        ${(() => { const d = getDifficultyLabel(meal.difficulty); return `<span class="difficulty-badge ${d.cls}">${d.label}</span>`; })()}
         <div class="view-recipe-link">View recipe <span>→</span></div>
       `;
       // Restore selected state visually after reshuffle
