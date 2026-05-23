@@ -1,34 +1,12 @@
 {
-  "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {
-        "userDetailsClaim": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
-        "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/be2a8a8a-b4ac-4569-badc-54389cc8f7bc/v2.0",
-          "clientIdSettingName": "AAD_CLIENT_ID",
-          "clientSecretSettingName": "AAD_CLIENT_SECRET"
-        }
-      }
-    }
-  },
   "routes": [
     {
-      "route": "/login",
-      "rewrite": "/.auth/login/aad"
-    },
-    {
-      "route": "/logout",
-      "rewrite": "/.auth/logout"
-    },
-    {
       "route": "/*",
-      "allowedRoles": ["authenticated"]
+      "serve": "/index.html",
+      "statusCode": 200
     }
   ],
-  "responseOverrides": {
-    "401": {
-      "redirect": "/login",
-      "statusCode": 302
-    }
+  "navigationFallback": {
+    "rewrite": "/index.html"
   }
 }
