@@ -3152,26 +3152,52 @@ async function generatePlan(reshuffle=false) {
   state.dislikes = document.getElementById('dislikes-input').value
     .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
-  // Filter pool
-  const pool = MEALS.filter(meal => {
-    // Allergen exclusion - strict
+  // Base filter (allergens, dislikes, diet)
+  function baseFilter(meal) {
     for (const allergen of meal.allergens) {
       if (state.allergies.has(allergen)) return false;
     }
-    // Dislike exclusion - any ingredient that contains a dislike substring
     for (const ing of meal.ingredients) {
       for (const dis of state.dislikes) {
         if (ing.item.toLowerCase().includes(dis)) return false;
       }
     }
-    // Diet exclusion - strict for keto / paleo / atkins
     if (!mealMatchesDiet(meal, state.diet)) return false;
-    // Difficulty filter
-    if (state.difficulty && state.difficulty !== 'any') {
-      if (meal.difficulty !== state.difficulty) return false;
-    }
     return true;
-  });
+  }
+
+  // Difficulty expansion logic
+  const difficultyOrder = ['super_quick','easy','medium','hard'];
+  let pool = MEALS.filter(baseFilter);
+  let difficultyWarning = null;
+
+  if (state.difficulty && state.difficulty !== 'any') {
+    const preferred = pool.filter(m => m.difficulty === state.difficulty);
+    // Need at least 7 unique recipes per meal type to fill a week
+    const minNeeded = 7;
+    const hasEnough = ['breakfast','lunch','dinner'].every(type =>
+      preferred.filter(m => m.type === type).length >= minNeeded
+    );
+
+    if (!hasEnough) {
+      // Expand to adjacent difficulty levels
+      const idx = difficultyOrder.indexOf(state.difficulty);
+      const expanded = new Set([state.difficulty]);
+      if (idx > 0) expanded.add(difficultyOrder[idx - 1]);
+      if (idx < difficultyOrder.length - 1) expanded.add(difficultyOrder[idx + 1]);
+      pool = pool.filter(m => expanded.has(m.difficulty));
+
+      const expandedLabels = [...expanded]
+        .filter(d => d !== state.difficulty)
+        .map(d => ({ super_quick:'Super Quick', easy:'Easy', medium:'Medium', hard:'Hard' }[d]));
+
+      const prefLabel = { super_quick:'Super Quick', easy:'Easy', medium:'Medium', hard:'Hard' }[state.difficulty];
+      const prefCount = preferred.length;
+      difficultyWarning = `Only ${prefCount} ${prefLabel} recipes found — we've also included ${expandedLabels.join(' and ')} recipes to fill your week.`;
+    } else {
+      pool = preferred;
+    }
+  }
 
   // Score remaining meals
   function score(meal) {
@@ -3201,15 +3227,21 @@ async function generatePlan(reshuffle=false) {
       .map(m => ({m, sc: score(m)}))
       .sort((a,b) => b.sc - a.sc);
 
-    // Take top portion, then shuffle, then pick 7 with no immediate repeats
     const top = byType.slice(0, Math.max(7, Math.floor(byType.length * 0.7)));
     const result = [];
     const usedIds = new Set();
 
     for (let i = 0; i < 7; i++) {
-      // Find next meal not used; if all used, allow reuse
+      // Find next meal not used
       let chosen = top.find(x => !usedIds.has(x.m.id));
-      if (!chosen) chosen = top[i % top.length];
+      // If all unique options exhausted, pick least-recently used
+      if (!chosen) {
+        const leastUsed = [...top].sort((a,b) =>
+          result.filter(r => r.id === a.m.id).length -
+          result.filter(r => r.id === b.m.id).length
+        )[0];
+        chosen = leastUsed || top[i % top.length];
+      }
       if (!chosen) {
         // Fallback: any meal of this type, ignoring filters? Better to use any from pool
         const any = pool.filter(m => m.type === type);
@@ -3281,7 +3313,7 @@ async function generatePlan(reshuffle=false) {
       dinner: dinners[i],
     });
   }
-  state.plan = {days, missingTypes};
+  state.plan = {days, missingTypes, difficultyWarning};
   renderPlan();
   goTo('plan');
 }
@@ -3296,9 +3328,15 @@ function renderPlan() {
 
   alertEl.innerHTML = '';
   if (state.plan.missingTypes.length > 0) {
-    alertEl.innerHTML = `<div class="alert">
+    alertEl.innerHTML += `<div class="alert">
       <span>⚠</span>
       <div><strong>Heads up:</strong> Your filters left no options for ${state.plan.missingTypes.join(', ')}. Try removing one allergy or dislike for more variety.</div>
+    </div>`;
+  }
+  if (state.plan.difficultyWarning) {
+    alertEl.innerHTML += `<div class="alert" style="border-color:var(--gold);background:rgba(196,149,74,.06)">
+      <span>ℹ</span>
+      <div><strong>Difficulty note:</strong> ${state.plan.difficultyWarning}</div>
     </div>`;
   }
 
