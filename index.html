@@ -1704,27 +1704,34 @@
             <button class="macro-mode-btn active" id="macro-grams-btn" onclick="setMacroMode('grams')">Grams</button>
             <button class="macro-mode-btn" id="macro-pct-btn" onclick="setMacroMode('percent')">Percentages</button>
           </div>
+          <div style="font-size:12px;color:var(--ink-muted);margin-bottom:10px">
+            All fields optional. Leave any blank and we'll calculate it using a 40/30/30 protein-focused split.
+          </div>
           <div class="macro-inputs">
             <div class="macro-input-group">
               <label id="protein-label">Protein (g/day)</label>
-              <input type="number" id="macro-protein" placeholder="e.g. 150" min="0"
-                onchange="updateCustomMacro('protein_g', this.value)">
+              <input type="number" id="macro-protein" placeholder="Optional" min="0"
+                oninput="recalculateMacros()">
             </div>
             <div class="macro-input-group">
               <label id="carbs-label">Carbs (g/day)</label>
-              <input type="number" id="macro-carbs" placeholder="e.g. 200" min="0"
-                onchange="updateCustomMacro('carbs_g', this.value)">
+              <input type="number" id="macro-carbs" placeholder="Optional" min="0"
+                oninput="recalculateMacros()">
             </div>
             <div class="macro-input-group">
               <label id="fat-label">Fat (g/day)</label>
-              <input type="number" id="macro-fat" placeholder="e.g. 65" min="0"
-                onchange="updateCustomMacro('fat_g', this.value)">
+              <input type="number" id="macro-fat" placeholder="Optional" min="0"
+                oninput="recalculateMacros()">
             </div>
             <div class="macro-input-group">
               <label>Calories (optional)</label>
-              <input type="number" id="macro-calories" placeholder="e.g. 2000" min="0"
-                onchange="updateCustomMacro('calories', this.value)">
+              <input type="number" id="macro-calories" placeholder="Optional" min="0"
+                oninput="recalculateMacros()">
             </div>
+          </div>
+          <div id="macro-calculated-display" style="display:none;margin-top:12px;
+            padding:10px 14px;background:rgba(61,90,61,.06);border-radius:6px;
+            border:1px solid var(--line);font-size:13px;color:var(--ink-soft)">
           </div>
         </div>
       </div>
@@ -3343,6 +3350,7 @@ function toggleCustomMacros(enabled) {
   state.customMacros.enabled = enabled;
   document.getElementById('macro-inputs-container').style.display =
     enabled ? 'block' : 'none';
+  if (enabled) recalculateMacros();
 }
 
 function setMacroMode(mode) {
@@ -3353,13 +3361,83 @@ function setMacroMode(mode) {
   document.getElementById('protein-label').textContent = isGrams ? 'Protein (g/day)' : 'Protein %';
   document.getElementById('carbs-label').textContent = isGrams ? 'Carbs (g/day)' : 'Carbs %';
   document.getElementById('fat-label').textContent = isGrams ? 'Fat (g/day)' : 'Fat %';
-  document.getElementById('macro-protein').placeholder = isGrams ? 'e.g. 150' : 'e.g. 30';
-  document.getElementById('macro-carbs').placeholder = isGrams ? 'e.g. 200' : 'e.g. 40';
-  document.getElementById('macro-fat').placeholder = isGrams ? 'e.g. 65' : 'e.g. 30';
 }
 
-function updateCustomMacro(key, value) {
-  state.customMacros[key] = value ? parseFloat(value) : null;
+function recalculateMacros() {
+  const pEl  = document.getElementById('macro-protein');
+  const cEl  = document.getElementById('macro-carbs');
+  const fEl  = document.getElementById('macro-fat');
+  const calEl = document.getElementById('macro-calories');
+  const display = document.getElementById('macro-calculated-display');
+
+  const mode = state.customMacros.mode;
+  let protein  = pEl.value  ? parseFloat(pEl.value)  : null;
+  let carbs    = cEl.value  ? parseFloat(cEl.value)   : null;
+  let fat      = fEl.value  ? parseFloat(fEl.value)   : null;
+  let calories = calEl.value ? parseFloat(calEl.value) : null;
+
+  // Convert percentages to grams using calories as base
+  if (mode === 'percent' && calories) {
+    if (protein !== null) protein = Math.round((calories * protein / 100) / 4);
+    if (carbs   !== null) carbs   = Math.round((calories * carbs   / 100) / 4);
+    if (fat     !== null) fat     = Math.round((calories * fat     / 100) / 9);
+  }
+
+  // Case 1: All three macros provided — calculate calories
+  if (protein !== null && carbs !== null && fat !== null) {
+    calories = Math.round((protein * 4) + (carbs * 4) + (fat * 9));
+    if (mode === 'grams') calEl.value = calories;
+  }
+
+  // Case 2: Some macros + calories — fill missing with 40/30/30 split
+  else if (calories) {
+    const proteinCal = protein !== null ? protein * 4 : null;
+    const carbsCal   = carbs   !== null ? carbs   * 4 : null;
+    const fatCal     = fat     !== null ? fat     * 9 : null;
+
+    const knownCal = (proteinCal || 0) + (carbsCal || 0) + (fatCal || 0);
+    const remaining = calories - knownCal;
+
+    if (protein === null) protein = Math.round((remaining * 0.40) / 4);
+    if (carbs   === null) carbs   = Math.round((remaining * 0.30) / 4);
+    if (fat     === null) fat     = Math.round((remaining * 0.30) / 9);
+
+    // Recalculate with filled values
+    calories = Math.round((protein * 4) + (carbs * 4) + (fat * 9));
+  }
+
+  // Case 3: Only calories provided — use 40/30/30 split
+  else if (calories && protein === null && carbs === null && fat === null) {
+    protein = Math.round((calories * 0.40) / 4);
+    carbs   = Math.round((calories * 0.30) / 4);
+    fat     = Math.round((calories * 0.30) / 9);
+  }
+
+  // Store resolved values in state
+  state.customMacros.protein_g = protein;
+  state.customMacros.carbs_g   = carbs;
+  state.customMacros.fat_g     = fat;
+  state.customMacros.calories  = calories;
+
+  // Show calculated breakdown
+  if (calories || protein || carbs || fat) {
+    const calcCal = protein && carbs && fat
+      ? Math.round((protein * 4) + (carbs * 4) + (fat * 9))
+      : calories || 0;
+    display.style.display = 'block';
+    display.innerHTML = `
+      <strong>Calculated daily targets:</strong><br>
+      🔥 ${calcCal} cal &nbsp;·&nbsp;
+      💪 ${protein || 0}g protein &nbsp;·&nbsp;
+      🌾 ${carbs || 0}g carbs &nbsp;·&nbsp;
+      🥑 ${fat || 0}g fat
+      ${calories && protein && carbs && fat && Math.abs(calcCal - calories) > 10
+        ? '<br><span style="color:var(--sage-deep)">✓ Calories auto-calculated from your macros</span>'
+        : ''}
+    `;
+  } else {
+    display.style.display = 'none';
+  }
 }
 
 function getMealHealthBadges(meal) {
@@ -3871,9 +3949,9 @@ function openRecipe(meal) {
             ' cal/serving estimate</span></div>';
         })()}
       </div>
-      ${meal.macro_available ? `
       <div class="modal-section">
         <h4>Nutrition per serving</h4>
+        ${meal.macro_available ? `
         <div class="macro-daily-bar" style="margin:0">
           <div class="macro-stat"><span class="val">${meal.calories_per_serving || '—'}</span><span class="lbl">Calories</span></div>
           <div class="macro-stat"><span class="val">${meal.protein_g ? meal.protein_g + 'g' : '—'}</span><span class="lbl">Protein</span></div>
@@ -3881,8 +3959,12 @@ function openRecipe(meal) {
           <div class="macro-stat"><span class="val">${meal.fat_g ? meal.fat_g + 'g' : '—'}</span><span class="lbl">Fat</span></div>
           <div class="macro-stat"><span class="val">${meal.fiber_g ? meal.fiber_g + 'g' : '—'}</span><span class="lbl">Fiber</span></div>
           <div class="macro-stat"><span class="val">${meal.sodium_mg ? meal.sodium_mg + 'mg' : '—'}</span><span class="lbl">Sodium</span></div>
-        </div>
-      </div>` : ''}
+        </div>` : `
+        <div style="font-size:13px;color:var(--ink-muted);font-style:italic;padding:8px 0">
+          Nutritional data not yet available for this recipe.
+          Data is being added automatically over the coming days.
+        </div>`}
+      </div>
       <div class="modal-section">
         <h4>Method</h4>
         <ol class="instructions">
