@@ -376,6 +376,36 @@
     margin-top: 8px;
   }
 
+  .chip-number {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line-strong);
+    background: var(--cream-card);
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    transition: all .15s ease;
+  }
+  .chip-number:hover {
+    border-color: var(--sage);
+    background: rgba(61,90,61,.06);
+  }
+  .chip-number.selected {
+    background: var(--sage-deep);
+    border-color: var(--sage-deep);
+    color: white;
+    font-weight: 600;
+  }
+  .chip-number-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
   .chip-grid {
     display: flex;
     flex-wrap: wrap;
@@ -1516,7 +1546,7 @@
         </div>
         <div class="hint">Every recipe and shopping quantity will be scaled to fit your table.</div>
       </div>
-      <div class="chip-grid" id="household-chips"></div>
+      <div class="chip-number-grid" id="household-chips"></div>
     </div>
 
 
