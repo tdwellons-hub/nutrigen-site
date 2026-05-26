@@ -1988,11 +1988,10 @@ const HEALTH_RULES = {
 };
 
 const DIFFICULTIES = [
-  { key: 'any',        label: '⭐ Any Level' },
   { key: 'super_quick', label: '⚡ Super Quick' },
-  { key: 'easy',       label: '🟢 Easy' },
-  { key: 'medium',     label: '🟡 Medium' },
-  { key: 'hard',       label: '🔴 Hard' },
+  { key: 'easy',        label: '🟢 Easy' },
+  { key: 'medium',      label: '🟡 Medium' },
+  { key: 'hard',        label: '🔴 Hard' },
 ];
 
 let MEALS = [];
@@ -3192,7 +3191,7 @@ const state = {
   householdSize: 2,
   appetiteBreakdown: {less: 0, standard: 2, more: 0},
   diet: 'none',
-  difficulty: 'any',
+  difficulties: new Set(),
   healthGoals: [],
   customMacros: {
     enabled: false,
@@ -3488,12 +3487,25 @@ function renderDifficultyChips() {
   const container = document.getElementById('difficulty-chips');
   if (!container) return;
   container.innerHTML = '';
+  // Add "Any Level" chip
+  const anyChip = document.createElement('button');
+  anyChip.className = 'chip' + (state.difficulties.size === 0 ? ' selected' : '');
+  anyChip.textContent = '⭐ Any Level';
+  anyChip.addEventListener('click', () => {
+    state.difficulties.clear();
+    renderDifficultyChips();
+  });
+  container.appendChild(anyChip);
   DIFFICULTIES.forEach(d => {
     const chip = document.createElement('button');
-    chip.className = 'chip' + (state.difficulty === d.key ? ' selected' : '');
+    chip.className = 'chip' + (state.difficulties.has(d.key) ? ' selected' : '');
     chip.textContent = d.label;
     chip.addEventListener('click', () => {
-      state.difficulty = d.key;
+      if (state.difficulties.has(d.key)) {
+        state.difficulties.delete(d.key);
+      } else {
+        state.difficulties.add(d.key);
+      }
       renderDifficultyChips();
     });
     container.appendChild(chip);
@@ -3581,6 +3593,11 @@ async function generatePlan(reshuffle=false) {
       }
     }
     if (!mealMatchesDiet(meal, state.diet)) return false;
+    // Hard cuisine filter — only show selected cuisines
+    if (state.cuisines.size > 0) {
+      const hasMatch = meal.cuisines.some(c => state.cuisines.has(c));
+      if (!hasMatch) return false;
+    }
     return true;
   }
 
@@ -3589,9 +3606,8 @@ async function generatePlan(reshuffle=false) {
   let pool = MEALS.filter(baseFilter);
   let difficultyWarning = null;
 
-  if (state.difficulty && state.difficulty !== 'any') {
-    const preferred = pool.filter(m => m.difficulty === state.difficulty);
-    // Need at least 7 unique recipes per meal type to fill a week
+  if (state.difficulties.size > 0) {
+    const preferred = pool.filter(m => state.difficulties.has(m.difficulty));
     const minNeeded = 7;
     const hasEnough = ['breakfast','lunch','dinner'].every(type =>
       preferred.filter(m => m.type === type).length >= minNeeded
@@ -3599,19 +3615,19 @@ async function generatePlan(reshuffle=false) {
 
     if (!hasEnough) {
       // Expand to adjacent difficulty levels
-      const idx = difficultyOrder.indexOf(state.difficulty);
-      const expanded = new Set([state.difficulty]);
-      if (idx > 0) expanded.add(difficultyOrder[idx - 1]);
-      if (idx < difficultyOrder.length - 1) expanded.add(difficultyOrder[idx + 1]);
+      const expanded = new Set([...state.difficulties]);
+      for (const d of state.difficulties) {
+        const idx = difficultyOrder.indexOf(d);
+        if (idx > 0) expanded.add(difficultyOrder[idx - 1]);
+        if (idx < difficultyOrder.length - 1) expanded.add(difficultyOrder[idx + 1]);
+      }
       pool = pool.filter(m => expanded.has(m.difficulty));
-
-      const expandedLabels = [...expanded]
-        .filter(d => d !== state.difficulty)
+      const addedLabels = [...expanded]
+        .filter(d => !state.difficulties.has(d))
         .map(d => ({ super_quick:'Super Quick', easy:'Easy', medium:'Medium', hard:'Hard' }[d]));
-
-      const prefLabel = { super_quick:'Super Quick', easy:'Easy', medium:'Medium', hard:'Hard' }[state.difficulty];
-      const prefCount = preferred.length;
-      difficultyWarning = `Only ${prefCount} ${prefLabel} recipes found — we've also included ${expandedLabels.join(' and ')} recipes to fill your week.`;
+      if (addedLabels.length > 0) {
+        difficultyWarning = `Not enough recipes for your selected levels — we've also included ${addedLabels.join(' and ')} recipes to fill your week.`;
+      }
     } else {
       pool = preferred;
     }
@@ -3898,9 +3914,7 @@ function openRecipe(meal) {
   // SHOPPING multiplier — what's bought (max-portion ceiling)
   const shopMult = getShoppingMultiplier(meal);
 
-  const breakdownStr = describeAppetiteBreakdown();
-  const b = state.appetiteBreakdown;
-  const isMixed = [b.less, b.standard, b.more].filter(n => n > 0).length > 1;
+
   const calRange = isMixed
     ? `${Math.round(1750/3)} / ${Math.round(2000/3)} / ${Math.round(2400/3)}`
     : `${getWeightedCaloriesPerMeal()}`;
@@ -4161,7 +4175,7 @@ function resetAll() {
   state.selectedStore = null;
   state.householdSize = 2;
   state.selectedSlots = new Set();
-  state.difficulty = 'any';
+  state.difficulties = new Set();
   state.healthGoals = [];
   state.customMacros = { enabled: false, mode: 'grams',
     protein_g: null, carbs_g: null, fat_g: null, calories: null };
