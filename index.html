@@ -676,6 +676,46 @@
   .health-goal-chip.disabled {
     opacity: 0.4; cursor: not-allowed;
   }
+  .toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    margin-bottom: 12px;
+  }
+  .toggle-switch input { display: none; }
+  .toggle-track {
+    width: 48px;
+    height: 26px;
+    background: var(--line-strong);
+    border-radius: 13px;
+    position: relative;
+    transition: background .2s ease;
+    flex-shrink: 0;
+  }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform .2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .toggle-switch input:checked ~ .toggle-track {
+    background: var(--sage-deep);
+  }
+  .toggle-switch input:checked ~ .toggle-track::after {
+    transform: translateX(22px);
+  }
+  .toggle-label {
+    font-size: 14px;
+    color: var(--ink);
+    user-select: none;
+  }
   .macro-inputs {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -1573,9 +1613,10 @@
         <div class="hint">Optional. Enter daily targets in grams or percentages.</div>
       </div>
       <div id="custom-macro-section">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:12px">
+        <label class="toggle-switch">
           <input type="checkbox" id="macro-enable-toggle" onchange="toggleCustomMacros(this.checked)">
-          <span style="font-size:13px">Enable custom macro targets</span>
+          <span class="toggle-track"></span>
+          <span class="toggle-label">Enable custom macro targets</span>
         </label>
         <div id="macro-inputs-container" style="display:none">
           <div class="macro-mode-toggle">
