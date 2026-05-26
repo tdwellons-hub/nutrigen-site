@@ -767,6 +767,81 @@
     box-shadow: 0 0 0 2px rgba(61,90,61,.15);
   }
   .meal-card.selected::before { opacity: 1 !important; }
+  .health-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 3px 7px;
+    border-radius: 20px; margin: 2px 2px 0 0;
+  }
+  .health-badge.compliant {
+    background: rgba(61,90,61,.1); color: var(--sage-deep);
+    border: 1px solid rgba(61,90,61,.2);
+  }
+  .health-badge.unknown {
+    background: rgba(150,150,150,.08); color: #888;
+    border: 1px solid rgba(150,150,150,.2);
+  }
+  .health-goal-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 16px; border-radius: 8px;
+    border: 1.5px solid var(--line-strong);
+    background: var(--cream-card); cursor: pointer;
+    font-size: 13px; transition: all .15s ease;
+    margin: 4px;
+  }
+  .health-goal-chip:hover { border-color: var(--sage); }
+  .health-goal-chip.selected {
+    border-color: var(--sage-deep);
+    background: rgba(61,90,61,.08);
+    color: var(--sage-deep); font-weight: 600;
+  }
+  .health-goal-chip.disabled {
+    opacity: 0.4; cursor: not-allowed;
+  }
+  .macro-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px; margin-top: 16px;
+  }
+  .macro-input-group {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .macro-input-group label {
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--ink-muted);
+  }
+  .macro-input-group input {
+    padding: 8px 12px; border: 1.5px solid var(--line-strong);
+    border-radius: 6px; font-size: 14px;
+    background: var(--cream-card); color: var(--ink);
+    width: 100%; box-sizing: border-box;
+  }
+  .macro-input-group input:focus {
+    outline: none; border-color: var(--sage);
+  }
+  .macro-mode-toggle {
+    display: flex; gap: 8px; margin-bottom: 12px;
+  }
+  .macro-mode-btn {
+    padding: 6px 16px; border-radius: 20px;
+    border: 1.5px solid var(--line-strong);
+    background: transparent; cursor: pointer;
+    font-size: 12px; transition: all .15s ease;
+  }
+  .macro-mode-btn.active {
+    background: var(--sage-deep); color: white;
+    border-color: var(--sage-deep);
+  }
+  .macro-daily-bar {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    padding: 12px 16px; margin-bottom: 20px;
+    background: var(--cream-card); border: 1px solid var(--line);
+    border-radius: 8px; font-size: 13px;
+  }
+  .macro-stat { display: flex; flex-direction: column; gap: 2px; }
+  .macro-stat .val { font-size: 18px; font-weight: 600; font-family: 'Fraunces', serif; }
+  .macro-stat .lbl { font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--ink-muted); }
   .difficulty-badge {
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
@@ -1598,11 +1673,68 @@
 
 
 
+    <!-- Health Goals -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">08 / Health Goals</span>
+          Any <em>health or dietary goals</em> to consider?
+        </div>
+        <div class="hint">Select up to 2 goals. Meals will be labeled showing which goals they meet.</div>
+      </div>
+      <div id="health-goal-chips"></div>
+    </div>
+
+    <!-- Custom Macros -->
+    <div class="pref-section">
+      <div>
+        <div class="label">
+          <span class="num">09 / Custom Macros</span>
+          Set your own <em>macro targets.</em>
+        </div>
+        <div class="hint">Optional. Enter daily targets in grams or percentages.</div>
+      </div>
+      <div id="custom-macro-section">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:12px">
+          <input type="checkbox" id="macro-enable-toggle" onchange="toggleCustomMacros(this.checked)">
+          <span style="font-size:13px">Enable custom macro targets</span>
+        </label>
+        <div id="macro-inputs-container" style="display:none">
+          <div class="macro-mode-toggle">
+            <button class="macro-mode-btn active" id="macro-grams-btn" onclick="setMacroMode('grams')">Grams</button>
+            <button class="macro-mode-btn" id="macro-pct-btn" onclick="setMacroMode('percent')">Percentages</button>
+          </div>
+          <div class="macro-inputs">
+            <div class="macro-input-group">
+              <label id="protein-label">Protein (g/day)</label>
+              <input type="number" id="macro-protein" placeholder="e.g. 150" min="0"
+                onchange="updateCustomMacro('protein_g', this.value)">
+            </div>
+            <div class="macro-input-group">
+              <label id="carbs-label">Carbs (g/day)</label>
+              <input type="number" id="macro-carbs" placeholder="e.g. 200" min="0"
+                onchange="updateCustomMacro('carbs_g', this.value)">
+            </div>
+            <div class="macro-input-group">
+              <label id="fat-label">Fat (g/day)</label>
+              <input type="number" id="macro-fat" placeholder="e.g. 65" min="0"
+                onchange="updateCustomMacro('fat_g', this.value)">
+            </div>
+            <div class="macro-input-group">
+              <label>Calories (optional)</label>
+              <input type="number" id="macro-calories" placeholder="e.g. 2000" min="0"
+                onchange="updateCustomMacro('calories', this.value)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Difficulty preference -->
     <div class="pref-section">
       <div>
         <div class="label">
-          <span class="num">06 / Difficulty</span>
+          <span class="num">10 / Difficulty</span>
           What's your <em>cooking comfort level?</em>
         </div>
         <div class="hint">Filter meals by how much time and effort you want to spend.</div>
@@ -1614,7 +1746,7 @@
     <div class="pref-section">
       <div>
         <div class="label">
-          <span class="num">07 / Diet</span>
+          <span class="num">11 / Diet</span>
           Following a <em>specific diet?</em>
         </div>
         <div class="hint">Optional. Meals will be filtered to match your protocol.</div>
@@ -1751,6 +1883,103 @@ setTimeout(() => {
  *  Shape mirrors the original hardcoded array so all existing
  *  plan generation, filtering, and rendering logic is unchanged.
  * ============================================================ */
+const HEALTH_GOALS = [
+  { key: 'none',        label: 'No specific goal',        icon: '⭐' },
+  { key: 'diabetic',    label: 'Diabetic Friendly',        icon: '🩺' },
+  { key: 'heart',       label: 'Heart Healthy',            icon: '❤️' },
+  { key: 'low_sodium',  label: 'Low Sodium',               icon: '🧂' },
+  { key: 'kidney',      label: 'Kidney Friendly',          icon: '🫘' },
+  { key: 'weight_loss', label: 'Weight Loss',              icon: '⚖️' },
+  { key: 'muscle',      label: 'High Protein / Muscle',    icon: '💪' },
+  { key: 'gerd',        label: 'GERD / Acid Reflux',       icon: '🌿' },
+];
+
+const HEALTH_RULES = {
+  diabetic: {
+    label: 'Diabetic Friendly', icon: '🩺',
+    check: (meal) => {
+      if (!meal.macro_available) return 'unknown';
+      if (meal.carbs_g > 45) return false;
+      if (meal.fiber_g < 3) return false;
+      const bad = ['white rice','white bread','sugar','syrup','honey','corn syrup'];
+      for (const ing of meal.ingredients) {
+        for (const b of bad) {
+          if (ing.item.toLowerCase().includes(b)) return false;
+        }
+      }
+      return true;
+    }
+  },
+  heart: {
+    label: 'Heart Healthy', icon: '❤️',
+    check: (meal) => {
+      if (!meal.macro_available) return 'unknown';
+      if (meal.fat_g > 15) return false;
+      if (meal.sodium_mg > 500) return false;
+      const bad = ['bacon','butter','heavy cream','lard','shortening'];
+      for (const ing of meal.ingredients) {
+        for (const b of bad) {
+          if (ing.item.toLowerCase().includes(b)) return false;
+        }
+      }
+      return true;
+    }
+  },
+  low_sodium: {
+    label: 'Low Sodium', icon: '🧂',
+    check: (meal) => {
+      if (!meal.macro_available) return 'unknown';
+      return meal.sodium_mg <= 400;
+    }
+  },
+  kidney: {
+    label: 'Kidney Friendly', icon: '🫘',
+    check: (meal) => {
+      if (!meal.macro_available) return 'unknown';
+      if (meal.sodium_mg > 300) return false;
+      if (meal.protein_g > 25) return false;
+      const bad = ['potato','tomato','banana','orange','avocado','spinach','bran'];
+      for (const ing of meal.ingredients) {
+        for (const b of bad) {
+          if (ing.item.toLowerCase().includes(b)) return false;
+        }
+      }
+      return true;
+    }
+  },
+  weight_loss: {
+    label: 'Weight Loss', icon: '⚖️',
+    check: (meal) => {
+      if (!meal.macro_available) return 'unknown';
+      if (meal.calories_per_serving > 500) return false;
+      if (meal.fiber_g < 4) return false;
+      if (meal.protein_g < 20) return false;
+      return true;
+    }
+  },
+  muscle: {
+    label: 'High Protein', icon: '💪',
+    check: (meal) => {
+      if (!meal.macro_available) return 'unknown';
+      return meal.protein_g >= 25;
+    }
+  },
+  gerd: {
+    label: 'GERD Friendly', icon: '🌿',
+    check: (meal) => {
+      const bad = ['tomato','citrus','lemon','lime','orange','chocolate',
+                   'coffee','spicy','chili','pepper sauce','hot sauce',
+                   'garlic','onion','mint','alcohol','wine'];
+      for (const ing of meal.ingredients) {
+        for (const b of bad) {
+          if (ing.item.toLowerCase().includes(b)) return false;
+        }
+      }
+      return true;
+    }
+  },
+};
+
 const DIFFICULTIES = [
   { key: 'any',        label: '⭐ Any Level' },
   { key: 'super_quick', label: '⚡ Super Quick' },
@@ -1851,6 +2080,13 @@ async function loadMeals() {
           category: i.category || 'pantry',
         })),
         difficulty: r.difficulty || 'medium',
+        macro_available:      r.macro_available || false,
+        calories_per_serving: r.calories_per_serving || null,
+        protein_g:            r.protein_g || null,
+        carbs_g:              r.carbs_g || null,
+        fat_g:                r.fat_g || null,
+        fiber_g:              r.fiber_g || null,
+        sodium_mg:            r.sodium_mg || null,
         steps: (stepByRecipe[r.id] || [])
           .sort((a, b) => a.step_order - b.step_order)
           .map(s => s.instruction),
@@ -2950,6 +3186,15 @@ const state = {
   appetiteBreakdown: {less: 0, standard: 2, more: 0},
   diet: 'none',
   difficulty: 'any',
+  healthGoals: [],
+  customMacros: {
+    enabled: false,
+    mode: 'grams',
+    protein_g: null,
+    carbs_g: null,
+    fat_g: null,
+    calories: null,
+  },
   plan: null,
   shoppingList: null,
   selectedStore: null,
@@ -3067,6 +3312,100 @@ function renderAppetiteBreakdown() {
   });
 }
 
+function renderHealthGoalChips() {
+  const container = document.getElementById('health-goal-chips');
+  if (!container) return;
+  container.innerHTML = '';
+  HEALTH_GOALS.filter(g => g.key !== 'none').forEach(goal => {
+    const isSelected = state.healthGoals.includes(goal.key);
+    const isDisabled = !isSelected && state.healthGoals.length >= 2;
+    const chip = document.createElement('button');
+    chip.className = 'health-goal-chip' +
+      (isSelected ? ' selected' : '') +
+      (isDisabled ? ' disabled' : '');
+    chip.innerHTML = `${goal.icon} ${goal.label}`;
+    chip.addEventListener('click', () => {
+      if (isDisabled) return;
+      if (isSelected) {
+        state.healthGoals = state.healthGoals.filter(k => k !== goal.key);
+      } else {
+        if (state.healthGoals.length < 2) {
+          state.healthGoals = [...state.healthGoals, goal.key];
+        }
+      }
+      renderHealthGoalChips();
+    });
+    container.appendChild(chip);
+  });
+}
+
+function toggleCustomMacros(enabled) {
+  state.customMacros.enabled = enabled;
+  document.getElementById('macro-inputs-container').style.display =
+    enabled ? 'block' : 'none';
+}
+
+function setMacroMode(mode) {
+  state.customMacros.mode = mode;
+  document.getElementById('macro-grams-btn').classList.toggle('active', mode === 'grams');
+  document.getElementById('macro-pct-btn').classList.toggle('active', mode === 'percent');
+  const isGrams = mode === 'grams';
+  document.getElementById('protein-label').textContent = isGrams ? 'Protein (g/day)' : 'Protein %';
+  document.getElementById('carbs-label').textContent = isGrams ? 'Carbs (g/day)' : 'Carbs %';
+  document.getElementById('fat-label').textContent = isGrams ? 'Fat (g/day)' : 'Fat %';
+  document.getElementById('macro-protein').placeholder = isGrams ? 'e.g. 150' : 'e.g. 30';
+  document.getElementById('macro-carbs').placeholder = isGrams ? 'e.g. 200' : 'e.g. 40';
+  document.getElementById('macro-fat').placeholder = isGrams ? 'e.g. 65' : 'e.g. 30';
+}
+
+function updateCustomMacro(key, value) {
+  state.customMacros[key] = value ? parseFloat(value) : null;
+}
+
+function getMealHealthBadges(meal) {
+  if (state.healthGoals.length === 0) return [];
+  const badges = [];
+  for (const goalKey of state.healthGoals) {
+    const rule = HEALTH_RULES[goalKey];
+    if (!rule) continue;
+    const result = rule.check(meal);
+    if (result === true) {
+      badges.push({ label: rule.label, icon: rule.icon, cls: 'compliant' });
+    } else if (result === 'unknown') {
+      badges.push({ label: rule.label + ' (no data)', icon: rule.icon, cls: 'unknown' });
+    }
+  }
+  return badges;
+}
+
+function getDailyMacroTotals() {
+  if (!state.plan) return null;
+  let calories = 0, protein = 0, carbs = 0, fat = 0, fiber = 0;
+  let counted = 0;
+  state.plan.days.forEach(day => {
+    ['breakfast','lunch','dinner'].forEach(type => {
+      const meal = day[type];
+      if (!meal || !meal.macro_available) return;
+      const people = state.householdSize || 1;
+      calories += (meal.calories_per_serving || 0) * people;
+      protein  += (meal.protein_g || 0) * people;
+      carbs    += (meal.carbs_g || 0) * people;
+      fat      += (meal.fat_g || 0) * people;
+      fiber    += (meal.fiber_g || 0) * people;
+      counted++;
+    });
+  });
+  if (counted === 0) return null;
+  return {
+    calories: Math.round(calories / 7),
+    protein:  Math.round(protein / 7),
+    carbs:    Math.round(carbs / 7),
+    fat:      Math.round(fat / 7),
+    fiber:    Math.round(fiber / 7),
+    hasData:  counted > 0,
+  };
+}
+
 function renderDifficultyChips() {
   const container = document.getElementById('difficulty-chips');
   if (!container) return;
@@ -3102,6 +3441,7 @@ function renderDietChips() {
 }
 
 renderHouseholdChips();
+renderHealthGoalChips();
 renderDifficultyChips();
 renderDietChips();
 
@@ -3357,6 +3697,24 @@ function renderPlan() {
   const calPerMeal = getWeightedCaloriesPerMeal();
     const isMixedAppetite = false;
 
+  // Daily macro totals bar
+  const macroTotals = getDailyMacroTotals();
+  const existingBar = document.getElementById('macro-daily-bar');
+  if (existingBar) existingBar.remove();
+  if (macroTotals && macroTotals.hasData) {
+    const bar = document.createElement('div');
+    bar.id = 'macro-daily-bar';
+    bar.className = 'macro-daily-bar';
+    bar.innerHTML = `
+      <div class="macro-stat"><span class="val">${macroTotals.calories}</span><span class="lbl">Cal/day</span></div>
+      <div class="macro-stat"><span class="val">${macroTotals.protein}g</span><span class="lbl">Protein</span></div>
+      <div class="macro-stat"><span class="val">${macroTotals.carbs}g</span><span class="lbl">Carbs</span></div>
+      <div class="macro-stat"><span class="val">${macroTotals.fat}g</span><span class="lbl">Fat</span></div>
+      <div class="macro-stat"><span class="val">${macroTotals.fiber}g</span><span class="lbl">Fiber</span></div>
+    `;
+    grid.before(bar);
+  }
+
   grid.innerHTML = '';
   state.plan.days.forEach(day => {
     const col = document.createElement('div');
@@ -3388,6 +3746,7 @@ function renderPlan() {
           <span>· ~${calPerMeal} cal/serving</span>
         </div>
         ${(() => { const d = getDifficultyLabel(meal.difficulty); return `<span class="difficulty-badge ${d.cls}">${d.label}</span>`; })()}
+        ${getMealHealthBadges(meal).map(b => `<span class="health-badge ${b.cls}">${b.icon} ${b.label}</span>`).join('')}
         <div class="view-recipe-link">View recipe <span>→</span></div>
       `;
       // Restore selected state visually after reshuffle
@@ -3512,6 +3871,18 @@ function openRecipe(meal) {
             ' cal/serving estimate</span></div>';
         })()}
       </div>
+      ${meal.macro_available ? `
+      <div class="modal-section">
+        <h4>Nutrition per serving</h4>
+        <div class="macro-daily-bar" style="margin:0">
+          <div class="macro-stat"><span class="val">${meal.calories_per_serving || '—'}</span><span class="lbl">Calories</span></div>
+          <div class="macro-stat"><span class="val">${meal.protein_g ? meal.protein_g + 'g' : '—'}</span><span class="lbl">Protein</span></div>
+          <div class="macro-stat"><span class="val">${meal.carbs_g ? meal.carbs_g + 'g' : '—'}</span><span class="lbl">Carbs</span></div>
+          <div class="macro-stat"><span class="val">${meal.fat_g ? meal.fat_g + 'g' : '—'}</span><span class="lbl">Fat</span></div>
+          <div class="macro-stat"><span class="val">${meal.fiber_g ? meal.fiber_g + 'g' : '—'}</span><span class="lbl">Fiber</span></div>
+          <div class="macro-stat"><span class="val">${meal.sodium_mg ? meal.sodium_mg + 'mg' : '—'}</span><span class="lbl">Sodium</span></div>
+        </div>
+      </div>` : ''}
       <div class="modal-section">
         <h4>Method</h4>
         <ol class="instructions">
@@ -3709,10 +4080,14 @@ function resetAll() {
   state.householdSize = 2;
   state.selectedSlots = new Set();
   state.difficulty = 'any';
+  state.healthGoals = [];
+  state.customMacros = { enabled: false, mode: 'grams',
+    protein_g: null, carbs_g: null, fat_g: null, calories: null };
   state.diet = 'none';
   document.getElementById('dislikes-input').value = '';
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected','allergy'));
   renderHouseholdChips();
+  renderHealthGoalChips();
   renderDifficultyChips();
     renderDietChips();
   goTo('welcome');
