@@ -414,158 +414,6 @@
   }
   .chip.selected .check { display: inline-block; }
 
-  /* Larger appetite chips with sub-label */
-  .chip-appetite {
-    font-family: 'DM Sans', sans-serif;
-    padding: 14px 22px;
-    border-radius: 18px;
-    background: var(--cream-card);
-    border: 1px solid var(--line);
-    color: var(--ink);
-    cursor: pointer;
-    transition: all .15s ease;
-    user-select: none;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-    min-width: 150px;
-  }
-  .chip-appetite:hover { border-color: var(--ink); transform: translateY(-1px); }
-  .chip-appetite.selected {
-    background: var(--ink);
-    color: var(--bg);
-    border-color: var(--ink);
-    box-shadow: var(--shadow-sm);
-  }
-  .chip-appetite strong {
-    font-size: 15px;
-    font-weight: 500;
-    font-family: 'Fraunces', serif;
-    letter-spacing: -0.005em;
-  }
-  .chip-appetite .sub {
-    font-size: 11px;
-    opacity: 0.7;
-    letter-spacing: 0.04em;
-  }
-
-  /* Household number chips (compact, square-ish) */
-  .chip-number {
-    font-family: 'Fraunces', serif;
-    font-size: 18px;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--cream-card);
-    border: 1px solid var(--line);
-    color: var(--ink);
-    cursor: pointer;
-    transition: all .15s ease;
-    user-select: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-  }
-  .chip-number:hover { border-color: var(--ink); transform: translateY(-1px); }
-  .chip-number.selected {
-    background: var(--sage-deep);
-    color: var(--bg);
-    border-color: var(--sage-deep);
-    box-shadow: 0 2px 8px rgba(42,65,41,.25);
-  }
-
-  /* Appetite breakdown steppers */
-  .appetite-breakdown {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .appetite-stepper-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px 20px;
-    background: var(--cream-card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    transition: border-color .15s ease;
-  }
-  .appetite-stepper-row:has(.stepper-count:not(.standard-count):not(:empty)) {
-    /* visual cue when count > 0 — handled via inline class below */
-  }
-  .appetite-stepper-row.active {
-    border-color: var(--sage);
-    background: linear-gradient(to right, rgba(61,90,61,.04), var(--cream-card) 60%);
-  }
-  .stepper-label {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-  .stepper-label .name {
-    font-family: 'Fraunces', serif;
-    font-size: 17px;
-    letter-spacing: -0.005em;
-  }
-  .stepper-label .cal {
-    font-size: 10.5px;
-    color: var(--ink-muted);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-  .stepper-controls {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-shrink: 0;
-  }
-  .stepper-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    border: 1px solid var(--line-strong);
-    background: var(--bg-elev);
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--ink);
-    display: grid;
-    place-items: center;
-    transition: all .12s ease;
-    user-select: none;
-    line-height: 1;
-    padding: 0;
-  }
-  .stepper-btn:hover:not(:disabled) {
-    background: var(--ink);
-    color: var(--bg);
-    border-color: var(--ink);
-  }
-  .stepper-btn:disabled {
-    opacity: 0.25;
-    cursor: not-allowed;
-  }
-  .stepper-count {
-    font-family: 'Fraunces', serif;
-    font-size: 24px;
-    min-width: 28px;
-    text-align: center;
-    line-height: 1;
-    font-weight: 400;
-  }
-  .stepper-readonly {
-    color: var(--ink-muted);
-  }
-  .stepper-hint {
-    font-size: 10.5px;
-    color: var(--ink-muted);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
 
   /* Diet chips (single-select) */
   .chip-diet {
@@ -1849,24 +1697,20 @@
  *  NUTRIGEN — API CONFIG
  * ============================================================ */
 /* ============================================================
- *  Azure Functions API — plain fetch, no SDK required.
- *  Works when opening the file directly (file://) or from a server.
+ *  NUTRIGEN API CONFIG
+ *  Connects to Azure Functions -> Azure PostgreSQL
  * ============================================================ */
-const SUPABASE_URL     = 'https://nutrigen-api.azurewebsites.net/api';
-const SUPABASE_API_KEY = 'not-required';
+const API_BASE_URL = 'https://nutrigen-api.azurewebsites.net/api';
 
-async function sbFetch(table, params = {}) {
-  const url = new URL(`${SUPABASE_URL}/${table}`);
+async function apiFetch(table, params = {}) {
+  const url = new URL(`${API_BASE_URL}/${table}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   const res = await fetch(url.toString(), {
     headers: {
-      'apikey':        SUPABASE_API_KEY,
-      'Authorization': `Bearer ${SUPABASE_API_KEY}`,
-      'Accept':        'application/json',
-      'Prefer':        'count=none',
-      // Override the default 1000-row cap — fetch everything
-      'Range':         '0-9999',
-      'Range-Unit':    'items',
+      'Accept':     'application/json',
+      'Prefer':     'count=none',
+      'Range':      '0-9999',
+      'Range-Unit': 'items',
     },
   });
   if (!res.ok) {
@@ -2007,7 +1851,6 @@ function transformDbRow(row) {
     unit:     i.unit || null,
     category: i.category || 'pantry',
   }));
-  // steps: nested select returns array under 'recipe_steps'
   const rawSteps = row.recipe_steps || row.steps || [];
   const steps = rawSteps
     .sort((a, b) => (a.step_order || 0) - (b.step_order || 0))
@@ -2036,7 +1879,7 @@ async function loadMeals() {
   mealsLoadPromise = (async () => {
     try {
       // Step 1: fetch all public recipes
-      const recipeData = await sbFetch('recipes', {
+      const recipeData = await apiFetch('recipes', {
         'is_public': 'eq.true',
         'order':     'id',
         'select':    '*',
@@ -2050,13 +1893,13 @@ async function loadMeals() {
 
       // Step 2: fetch ingredients (all at once — PostgREST handles large IN lists)
       const ids = recipeData.map(r => r.id).join(',');
-      const ingData = await sbFetch('recipe_ingredients', {
+      const ingData = await apiFetch('recipe_ingredients', {
         'recipe_id': `in.(${ids})`,
         'select':    '*',
       });
 
       // Step 3: fetch steps
-      const stepData = await sbFetch('recipe_steps', {
+      const stepData = await apiFetch('recipe_steps', {
         'recipe_id': `in.(${ids})`,
         'order':     'step_order',
         'select':    '*',
@@ -2107,7 +1950,7 @@ async function loadMeals() {
     } catch (err) {
       // Log the full error so we can diagnose it
       const errMsg = err?.message || err?.details || err?.hint || JSON.stringify(err) || String(err);
-      console.error('NutriGen DB error:', errMsg, err);
+      console.error('NutriGen API error:', errMsg, err);
       // Show error banner with real message
       const banner = document.getElementById('db-error-banner');
       if (banner) {
@@ -3173,49 +3016,6 @@ function getWeightedCaloriesPerMeal() {
 }
 
 // Plain-language breakdown like "1 small + 1 standard + 2 large" or "4 standard"
-function describeAppetiteBreakdown() {
-  const b = state.appetiteBreakdown;
-  const total = b.less + b.standard + b.more;
-  if (total === 0) return '';
-  if (b.less === total)     return `${total} small ${total === 1 ? 'appetite' : 'appetites'}`;
-  if (b.standard === total) return `${total} standard ${total === 1 ? 'appetite' : 'appetites'}`;
-  if (b.more === total)     return `${total} large ${total === 1 ? 'appetite' : 'appetites'}`;
-  const parts = [];
-  if (b.less > 0)     parts.push(`${b.less} small`);
-  if (b.standard > 0) parts.push(`${b.standard} standard`);
-  if (b.more > 0)     parts.push(`${b.more} large`);
-  return parts.join(' + ');
-}
-
-/* ============================================================
- *  STATE
- * ============================================================ */
-const state = {
-  cuisines: new Set(),
-  proteins: new Set(),
-  allergies: new Set(),
-  dislikes: [],
-  householdSize: 2,
-  appetiteBreakdown: {less: 0, standard: 2, more: 0},
-  diet: 'none',
-  difficulties: new Set(),
-  healthGoals: [],
-  customMacros: {
-    enabled: false,
-    mode: 'grams',
-    protein_g: null,
-    carbs_g: null,
-    fat_g: null,
-    calories: null,
-  },
-  plan: null,
-  shoppingList: null,
-  selectedStore: null,
-};
-
-/* ============================================================
- *  INIT — render chip selectors
- * ============================================================ */
 function renderChips(containerId, items, stateSet, isAllergy=false) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
@@ -3253,75 +3053,9 @@ function renderHouseholdChips() {
     chip.addEventListener('click', () => {
       state.householdSize = n;
       // Reset appetite breakdown to all-standard when household changes
-      state.appetiteBreakdown = {less: 0, standard: n, more: 0};
-      renderHouseholdChips();
+          renderHouseholdChips();
           });
     container.appendChild(chip);
-  });
-}
-
-function renderAppetiteBreakdown() {
-  const container = document.getElementById('appetite-breakdown');
-  const b = state.appetiteBreakdown;
-  const total = state.householdSize;
-
-  // Self-heal: ensure sum always equals household
-  if (b.less + b.standard + b.more !== total) {
-    b.less = 0; b.standard = total; b.more = 0;
-  }
-
-  container.innerHTML = '';
-  const rows = [
-    {key:'less',     label:'A little less', cal:1750, editable: true},
-    {key:'standard', label:'Standard',      cal:2000, editable: false},
-    {key:'more',     label:'A little more', cal:2400, editable: true},
-  ];
-
-  rows.forEach(row => {
-    const div = document.createElement('div');
-    const count = b[row.key];
-    div.className = 'appetite-stepper-row' + (count > 0 && row.editable ? ' active' : '');
-
-    if (row.editable) {
-      const canDecrement = count > 0;
-      const canIncrement = b.standard > 0;
-      div.innerHTML = `
-        <div class="stepper-label">
-          <span class="name">${row.label}</span>
-          <span class="cal">${row.cal.toLocaleString()} cal / day</span>
-        </div>
-        <div class="stepper-controls">
-          <button class="stepper-btn dec" ${canDecrement ? '' : 'disabled'} aria-label="Decrease ${row.label}">−</button>
-          <span class="stepper-count">${count}</span>
-          <button class="stepper-btn inc" ${canIncrement ? '' : 'disabled'} aria-label="Increase ${row.label}">+</button>
-        </div>
-      `;
-      div.querySelector('.dec').addEventListener('click', () => {
-        if (b[row.key] > 0) {
-          b[row.key]--;
-          b.standard++;
-                  }
-      });
-      div.querySelector('.inc').addEventListener('click', () => {
-        if (b.standard > 0) {
-          b[row.key]++;
-          b.standard--;
-                  }
-      });
-    } else {
-      // Standard row is the auto-balancer
-      div.innerHTML = `
-        <div class="stepper-label">
-          <span class="name">${row.label}</span>
-          <span class="cal">${row.cal.toLocaleString()} cal / day · default</span>
-        </div>
-        <div class="stepper-controls stepper-readonly">
-          <span class="stepper-count standard-count">${count}</span>
-          <span class="stepper-hint">remaining</span>
-        </div>
-      `;
-    }
-    container.appendChild(div);
   });
 }
 
