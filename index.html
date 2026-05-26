@@ -2148,6 +2148,9 @@ loadMeals();
  *  and "extra-virgin olive oil" → "olive oil" etc.
  * ============================================================ */
 function normalizeIngredientName(raw) {
+  // Strip quantity/measurement text bleeding into name e.g. "salt 1/2 2mil" -> "salt"
+  raw = raw.replace(/\s+[\d\/\.½¼¾⅓⅔]+\s*(mil|ml|g|kg|oz|lb|tsp|tbsp|cup).*$/i, '').trim();
+  raw = raw.replace(/\s+[\d\/\.½¼¾⅓⅔]+\s*$/, '').trim();
   let n = raw.toLowerCase().trim();
 
   // Remove common adjective prefixes
@@ -2310,6 +2313,10 @@ function normalizeIngredientName(raw) {
     'sweetcorn': 'corn',
     'sweet corn': 'corn',
     'all purpose flour': 'all-purpose flour',
+    'flour':             'all-purpose flour',
+    'taco seasoning mix': 'taco seasoning',
+    'taco spice mix':    'taco seasoning',
+    'taco spice':        'taco seasoning',
     'plain flour':       'all-purpose flour',
     'self-raising flour': 'all-purpose flour',
     'panko breadcrumbs': 'breadcrumbs',
