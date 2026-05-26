@@ -1,11 +1,20 @@
 {
   "routes": [
     {
+      "route": "/password.html",
+      "serve": "/password.html"
+    },
+    {
+      "route": "/index.html",
+      "serve": "/index.html"
+    },
+    {
       "route": "/*",
       "rewrite": "/index.html"
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/password.html", "/*.html"]
   }
 }
