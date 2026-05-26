@@ -2963,24 +2963,35 @@ function mealMatchesDiet(meal, dietKey) {
 
 const HOUSEHOLD_OPTIONS = [1,2,3,4,5,6,7,8];
 
-const APPETITE_OPTIONS = [
-  {key:'less',     label:'A little less', cal:1750},
-  {key:'standard', label:'Standard',      cal:2000},
-  {key:'more',     label:'A little more', cal:2400},
-];
-
 /* ============================================================
- *  PORTION SCALING — PER-PERSON APPETITE BREAKDOWN
- *  Each household member is assigned an appetite size. Cooking
- *  is scaled to the SUM of actual portions. Shopping is sized
- *  to the WORST CASE (everyone eating the largest portion) so
- *  you never run short.
+ *  APPLICATION STATE
  * ============================================================ */
-const APPETITE_FACTOR = {
-  'less':     1750 / 2000,  // 0.875
-  'standard': 2000 / 2000,  // 1.000
-  'more':     2400 / 2000,  // 1.200
+const state = {
+  householdSize:  2,
+  cuisines:       new Set(),
+  proteins:       new Set(),
+  allergies:      new Set(),
+  dislikes:       [],
+  diet:           'none',
+  difficulties:   new Set(),
+  healthGoals:    [],
+  customMacros: {
+    enabled:   false,
+    mode:      'grams',
+    protein_g: null,
+    carbs_g:   null,
+    fat_g:     null,
+    calories:  null,
+  },
+  plan:           null,
+  selectedSlots:  new Set(),
+  selectedStore:  null,
+  shoppingList:   {},
 };
+
+
+
+
 
 // Cooking multiplier: how much to actually prepare for this meal
 function getCookingMultiplier(meal) {
@@ -3015,7 +3026,6 @@ function getWeightedCaloriesPerMeal() {
   return Math.round(getWeightedDailyCalories() / 3);
 }
 
-// Plain-language breakdown like "1 small + 1 standard + 2 large" or "4 standard"
 function renderChips(containerId, items, stateSet, isAllergy=false) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
