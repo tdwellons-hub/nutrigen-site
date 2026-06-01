@@ -1913,6 +1913,20 @@ let MEALS = [];
 let mealsReady = false;
 let mealsLoadPromise = null;
 
+// Normalize a DB field that should be an array but may arrive as a JSON string or CSV string
+function parseArrayField(val) {
+  if (Array.isArray(val)) return val.filter(v => v != null);
+  if (!val) return [];
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('[')) {
+      try { const p = JSON.parse(trimmed); return Array.isArray(p) ? p.filter(v => v != null) : []; } catch {}
+    }
+    return trimmed.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 function transformDbRow(row) {
   // ingredients: nested select returns array under 'recipe_ingredients'
   const rawIngredients = row.recipe_ingredients || row.ingredients || [];
@@ -1986,12 +2000,12 @@ async function loadMeals() {
         id:         r.id,
         name:       r.name,
         type:       r.meal_type,
-        cuisines:   r.cuisines   || [],
-        proteins:   r.proteins   || [],
-        allergens:  r.allergens  || [],
+        cuisines:   parseArrayField(r.cuisines),
+        proteins:   parseArrayField(r.proteins),
+        allergens:  parseArrayField(r.allergens),
         prep:       r.prep_minutes  || 30,
         servings:   r.base_servings || 4,
-        diet_tags:  r.diet_tags  || [],
+        diet_tags:  parseArrayField(r.diet_tags),
         source:     r.source     || 'nutrigen_seed',
         ingredients: (ingByRecipe[r.id] || []).map(i => ({
           item:     i.item,
@@ -3729,7 +3743,10 @@ function fmtQty(qty, unit) {
 function openRecipe(meal) {
   const modal = document.getElementById('recipe-modal');
   const content = document.getElementById('recipe-modal-content');
-  const cuisineLabel = meal.cuisines.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(' · ');
+  const cuisineLabel = parseArrayField(meal.cuisines)
+    .filter(c => c && typeof c === 'string')
+    .map(c => c.charAt(0).toUpperCase() + c.slice(1))
+    .join(' · ');
 
   // COOKING multiplier — actual food prepared for the mix of appetites
   const cookMult = getCookingMultiplier(meal);
