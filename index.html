@@ -3754,10 +3754,8 @@ function openRecipe(meal) {
   const shopMult = getShoppingMultiplier(meal);
 
 
-  const calRange = isMixed
-    ? `${Math.round(1750/3)} / ${Math.round(2000/3)} / ${Math.round(2400/3)}`
-    : `${getWeightedCaloriesPerMeal()}`;
-  const calLabel = isMixed ? 'Cal small / std / large' : 'Cal per portion';
+  const calRange = `${getWeightedCaloriesPerMeal()}`;
+  const householdLabel = `${state.householdSize} ${state.householdSize === 1 ? 'person' : 'people'}`;
 
   content.innerHTML = `
     <div class="modal-header">
@@ -3766,8 +3764,8 @@ function openRecipe(meal) {
       <h3>${meal.name}</h3>
       <div class="modal-meta">
         <div><span class="key">Prep & cook</span><span class="val">${meal.prep} min</span></div>
-        <div><span class="key">Cooks for</span><span class="val">${breakdownStr}</span></div>
-        <div><span class="key">${calLabel}</span><span class="val">${calRange}</span></div>
+        <div><span class="key">Cooks for</span><span class="val">${householdLabel}</span></div>
+        <div><span class="key">Cal per portion</span><span class="val">${calRange}</span></div>
       </div>
     </div>
     <div class="modal-body">
