@@ -2006,18 +2006,15 @@ async function loadMeals() {
         return MEALS;
       }
 
-      // Step 2: fetch ingredients (all at once — PostgREST handles large IN lists)
-      const ids = recipeData.map(r => r.id).join(',');
+      // Step 2: fetch all ingredients (no ID filter — URL too long with 300+ recipes)
       const ingData = await apiFetch('recipe_ingredients', {
-        'recipe_id': `in.(${ids})`,
-        'select':    '*',
+        'select': '*',
       });
 
-      // Step 3: fetch steps
+      // Step 3: fetch all steps
       const stepData = await apiFetch('recipe_steps', {
-        'recipe_id': `in.(${ids})`,
-        'order':     'step_order',
-        'select':    '*',
+        'order':  'step_order',
+        'select': '*',
       });
 
       // Step 4: manually join on the client side
