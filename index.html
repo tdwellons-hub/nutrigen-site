@@ -1329,6 +1329,34 @@
     .meal-card, .shop-category { break-inside: avoid; }
   }
 
+  /* ============ Toast ============ */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 20px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 14px 24px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+    z-index: 9999;
+    max-width: min(90vw, 440px);
+    text-align: center;
+  }
+  .toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  @media print {
+    .toast { display: none !important; }
+  }
+
   @media (max-width: 800px) {
     .app { padding: 20px 18px 60px; }
     .hero { grid-template-columns: 1fr; gap: 32px; }
@@ -1719,6 +1747,8 @@
       </div>
       <div class="plan-actions">
         <button class="btn btn-secondary" onclick="goTo('plan')">← Back to plan</button>
+        <button class="btn btn-secondary" id="instacart-btn" onclick="exportToInstacart()">🛒 Export to Instacart</button>
+        <button class="btn btn-secondary" onclick="copyShoppingList()">📋 Copy list</button>
         <button class="btn btn-secondary" onclick="window.print()">🖨 Print list</button>
       </div>
     </div>
@@ -2761,6 +2791,20 @@ function findPurchase(itemName, qtyByUnit) {
   // Smart fallback — never shows a raw decimal
   return smartFallback(itemName, qtyByUnit);
 }
+
+/* ============================================================
+ *  SHOPPING LIST CATEGORIES
+ * ============================================================ */
+const CATEGORY_LABELS = {
+  produce:  {name: 'Produce',         emoji: '🥬'},
+  proteins: {name: 'Meat & Seafood',  emoji: '🥩'},
+  dairy:    {name: 'Dairy & Eggs',    emoji: '🥚'},
+  bakery:   {name: 'Bakery & Bread',  emoji: '🍞'},
+  pantry:   {name: 'Pantry',          emoji: '🫙'},
+  frozen:   {name: 'Frozen',          emoji: '🧊'},
+  other:    {name: 'Other',           emoji: '🛒'},
+};
+const CATEGORY_ORDER = ['produce','proteins','dairy','bakery','pantry','frozen','other'];
 
 /* ============================================================
  *  STORES & COUPONS
@@ -3937,26 +3981,15 @@ function renderShoppingList() {
   const detailEl = document.getElementById('savings-detail');
   grid.innerHTML = '';
 
-  const categoryLabels = {
-    produce:  {name: 'Produce',         emoji: '🥬'},
-    proteins: {name: 'Meat & Seafood',  emoji: '🥩'},
-    dairy:    {name: 'Dairy & Eggs',    emoji: '🥚'},
-    bakery:   {name: 'Bakery & Bread',  emoji: '🍞'},
-    pantry:   {name: 'Pantry',          emoji: '🫙'},
-    frozen:   {name: 'Frozen',          emoji: '🧊'},
-    other:    {name: 'Other',           emoji: '🛒'},
-  };
-  const order = ['produce','proteins','dairy','bakery','pantry','frozen','other'];
-
   let totalSavings = 0;
   let couponCount = 0;
   const storeKey = state.selectedStore;
   const storeName = storeKey ? STORES.find(s => s.key === storeKey).label : null;
 
-  order.forEach(cat => {
+  CATEGORY_ORDER.forEach(cat => {
     const items = state.shoppingList[cat];
     if (!items || items.length === 0) return;
-    const meta = categoryLabels[cat];
+    const meta = CATEGORY_LABELS[cat];
     const card = document.createElement('div');
     card.className = 'shop-category';
 
@@ -3998,6 +4031,103 @@ function renderShoppingList() {
   } else {
     banner.classList.remove('visible');
   }
+}
+
+/* ============================================================
+ *  TOAST
+ * ============================================================ */
+function showToast(message) {
+  let toast = document.getElementById('nutrigen-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'nutrigen-toast';
+    toast.className = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.remove('visible');
+  void toast.offsetWidth; // restart the transition if a toast is already showing
+  toast.classList.add('visible');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => toast.classList.remove('visible'), 3200);
+}
+
+/* ============================================================
+ *  SHOPPING LIST EXPORT
+ * ============================================================ */
+function buildShoppingListText() {
+  const lines = ['NutriGen Shopping List', ''];
+  CATEGORY_ORDER.forEach(cat => {
+    const items = state.shoppingList[cat];
+    if (!items || items.length === 0) return;
+    const meta = CATEGORY_LABELS[cat];
+    lines.push(`${meta.emoji} ${meta.name}`);
+    items.forEach(it => lines.push(`- ${findPurchase(it.item, it.qtyByUnit)}  ${it.item}`));
+    lines.push('');
+  });
+  return lines.join('\n').trim();
+}
+
+function flattenShoppingListForExport() {
+  const items = [];
+  CATEGORY_ORDER.forEach(cat => {
+    (state.shoppingList[cat] || []).forEach(it => {
+      const units = Object.keys(it.qtyByUnit || {}).filter(u => it.qtyByUnit[u] > 0);
+      const unit = units[0] || 'each';
+      const quantity = units.length ? it.qtyByUnit[unit] : 1;
+      items.push({ name: it.item, quantity, unit });
+    });
+  });
+  return items;
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function copyShoppingList() {
+  const ok = await copyTextToClipboard(buildShoppingListText());
+  showToast(ok ? 'Shopping list copied to clipboard' : 'Could not copy — try again');
+}
+
+async function exportToInstacart() {
+  const items = flattenShoppingListForExport();
+  if (items.length === 0) { showToast('Your shopping list is empty'); return; }
+
+  const btn = document.getElementById('instacart-btn');
+  const originalLabel = btn ? btn.textContent : null;
+  if (btn) { btn.disabled = true; btn.textContent = 'Connecting…'; }
+
+  let url = null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/instacart_export`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    const data = await res.json();
+    if (data.available && data.url) url = data.url;
+  } catch (e) {
+    // Fall through to the clipboard fallback below.
+  }
+
+  if (url) {
+    window.open(url, '_blank');
+  } else {
+    // Instacart isn't connected yet (no API key configured) — copy the
+    // list instead so the button still does something useful.
+    const ok = await copyTextToClipboard(buildShoppingListText());
+    showToast(ok
+      ? 'Instacart connection coming soon — list copied to clipboard instead'
+      : 'Instacart connection coming soon');
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
 }
 
 /* ============================================================
