@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NutriGen — Confirming your subscription</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5efe6;
+    --ink: #1f1a14;
+    --ink-soft: #5a4f42;
+    --line: #e6dcc9;
+    --line-strong: #c9bda5;
+    --sage: #3d5a3d;
+    --sage-deep: #2a4129;
+    --terracotta: #b85742;
+    --cream-card: #fdfaf3;
+    --shadow-lg: 0 20px 48px rgba(31,26,20,.18);
+    --radius-lg: 18px;
+    --radius-md: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+  }
+  .card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 40px 36px;
+    text-align: center;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  p { color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; }
+  .spinner {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 20px;
+    border: 3px solid var(--line-strong);
+    border-top-color: var(--sage);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn {
+    display: inline-block;
+    margin-top: 22px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 14px 26px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    background: var(--ink);
+    color: var(--bg);
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--sage-deep); }
+  a.support { color: var(--terracotta); }
+  #state-error, #state-used { display: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div id="state-loading">
+      <div class="spinner"></div>
+      <h1>Confirming your subscription…</h1>
+      <p>Just a moment while we finish setting up your access.</p>
+    </div>
+
+    <div id="state-used">
+      <h1>Link already used</h1>
+      <p>This confirmation link has already been redeemed. If you already completed checkout, your access should already be saved on the device you used — try opening the app again.</p>
+      <a class="btn" href="/index.html">Open NutriGen</a>
+    </div>
+
+    <div id="state-error">
+      <h1>Something went wrong</h1>
+      <p id="error-detail">We couldn't confirm your subscription just now.</p>
+      <p style="margin-top:14px;">If you were charged, contact <a class="support" href="mailto:support@nutrigenfoods.com">support@nutrigenfoods.com</a> and we'll sort it out.</p>
+      <a class="btn" href="/subscribe.html">Back to subscribe</a>
+    </div>
+  </div>
+
+<script>
+  const API_BASE_URL = 'https://nutrigen-api.azurewebsites.net/api';
+
+  function show(id) {
+    ['state-loading', 'state-used', 'state-error'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? 'block' : 'none';
+    });
+  }
+
+  async function confirmSubscription() {
+    const sessionId = new URLSearchParams(window.location.search).get('session_id');
+    if (!sessionId) {
+      document.getElementById('error-detail').textContent = 'Missing confirmation details in the link.';
+      show('state-error');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/verify_session?session_id=${encodeURIComponent(sessionId)}`);
+      const data = await res.json();
+
+      if (res.status === 410) {
+        show('state-used');
+        return;
+      }
+      if (!res.ok || !data.access_token) {
+        document.getElementById('error-detail').textContent = data.error || 'We couldn\'t confirm your subscription just now.';
+        show('state-error');
+        return;
+      }
+
+      localStorage.setItem('nutrigen_access_token', data.access_token);
+      window.location.href = '/index.html';
+    } catch (e) {
+      document.getElementById('error-detail').textContent = 'A network error occurred while confirming your subscription.';
+      show('state-error');
+    }
+  }
+
+  confirmSubscription();
+</script>
+</body>
+</html>

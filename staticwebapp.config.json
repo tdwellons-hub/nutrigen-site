@@ -1,8 +1,12 @@
 {
   "routes": [
     {
-      "route": "/password.html",
-      "serve": "/password.html"
+      "route": "/subscribe.html",
+      "serve": "/subscribe.html"
+    },
+    {
+      "route": "/subscribe-success.html",
+      "serve": "/subscribe-success.html"
     },
     {
       "route": "/index.html",
@@ -15,6 +19,6 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/password.html", "/*.html"]
+    "exclude": ["/subscribe.html", "/subscribe-success.html", "/*.html"]
   }
 }

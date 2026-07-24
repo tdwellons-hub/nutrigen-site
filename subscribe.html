@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NutriGen — Subscribe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5efe6;
+    --bg-elev: #fbf7f0;
+    --ink: #1f1a14;
+    --ink-soft: #5a4f42;
+    --ink-muted: #8c8276;
+    --line: #e6dcc9;
+    --line-strong: #c9bda5;
+    --sage: #3d5a3d;
+    --sage-deep: #2a4129;
+    --terracotta: #b85742;
+    --terracotta-soft: #d68b75;
+    --gold: #c4954a;
+    --cream-card: #fdfaf3;
+    --shadow-sm: 0 1px 2px rgba(31,26,20,.05), 0 2px 8px rgba(31,26,20,.04);
+    --shadow-md: 0 4px 16px rgba(31,26,20,.08), 0 12px 32px rgba(31,26,20,.06);
+    --shadow-lg: 0 20px 48px rgba(31,26,20,.18);
+    --radius-sm: 4px;
+    --radius-md: 10px;
+    --radius-lg: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(196,149,74,.08), transparent 45%),
+      radial-gradient(circle at 88% 95%, rgba(61,90,61,.07), transparent 50%);
+  }
+  .display { font-family: 'Fraunces', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+
+  .card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 40px 36px;
+  }
+  .brand-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--sage);
+    color: var(--bg);
+    display: grid;
+    place-items: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .sub {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin-bottom: 28px;
+  }
+  .banner {
+    background: rgba(184,87,66,.08);
+    border: 1px solid var(--terracotta-soft);
+    color: var(--terracotta);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    font-size: 13.5px;
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+  }
+  input[type="email"], input[type="text"] {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-elev);
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+  input:focus { outline: none; border-color: var(--sage); }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 15px 28px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+    width: 100%;
+    text-align: center;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn-primary:hover { background: var(--sage-deep); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn-primary:disabled { opacity: .6; cursor: default; transform: none; box-shadow: none; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 18px;
+    color: var(--ink-muted);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .toggle-link {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .toggle-link:hover { color: var(--ink); }
+
+  #code-panel { display: none; margin-top: 18px; }
+  #code-panel.open { display: block; }
+
+  .error-text {
+    color: var(--terracotta);
+    font-size: 13px;
+    margin-top: -8px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .error-text.show { display: block; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand-mark">N</div>
+    <h1 class="display">Get full access</h1>
+    <p class="sub">Personalized weekly meal plans, shopping lists, and macro tracking for your household.</p>
+
+    <div class="banner" id="canceled-banner" style="display:none;">
+      Checkout canceled — no charge was made. You can try again below.
+    </div>
+    <div class="banner" id="error-banner" style="display:none;"></div>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+    <button class="btn btn-primary" id="subscribe-btn" onclick="startCheckout()">Subscribe</button>
+
+    <div class="divider">or</div>
+    <button class="toggle-link" id="code-toggle" onclick="toggleCodePanel()">Already have an access code?</button>
+
+    <div id="code-panel">
+      <label for="access-code">Access code</label>
+      <input type="text" id="access-code" placeholder="Paste your access code" autocomplete="off" />
+      <p class="error-text" id="code-error">That code isn't valid or active.</p>
+      <button class="btn btn-primary" id="code-btn" onclick="submitAccessCode()">Continue</button>
+    </div>
+  </div>
+
+<script>
+  const API_BASE_URL = 'https://nutrigen-api.azurewebsites.net/api';
+
+  if (new URLSearchParams(window.location.search).get('canceled') === '1') {
+    document.getElementById('canceled-banner').style.display = 'block';
+  }
+
+  function showError(message) {
+    const el = document.getElementById('error-banner');
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+
+  function toggleCodePanel() {
+    document.getElementById('code-panel').classList.toggle('open');
+  }
+
+  async function startCheckout() {
+    const btn = document.getElementById('subscribe-btn');
+    const email = document.getElementById('email').value.trim();
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/create_checkout_session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(email ? { email } : {}),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || 'Could not start checkout');
+      window.location.href = data.url;
+    } catch (e) {
+      showError('Something went wrong starting checkout. Please try again in a moment.');
+      btn.disabled = false;
+      btn.textContent = 'Subscribe';
+    }
+  }
+
+  async function submitAccessCode() {
+    const codeInput = document.getElementById('access-code');
+    const errorEl = document.getElementById('code-error');
+    const btn = document.getElementById('code-btn');
+    const token = codeInput.value.trim();
+    errorEl.classList.remove('show');
+    if (!token) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/check_access`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.active) {
+        localStorage.setItem('nutrigen_access_token', token);
+        window.location.href = '/index.html';
+        return;
+      }
+      errorEl.classList.add('show');
+    } catch (e) {
+      errorEl.textContent = 'Could not verify that code right now — try again.';
+      errorEl.classList.add('show');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Continue';
+  }
+
+  document.getElementById('access-code').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') submitAccessCode();
+  });
+</script>
+</body>
+</html>

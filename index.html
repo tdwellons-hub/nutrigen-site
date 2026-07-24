@@ -1,10 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="visibility:hidden">
 <head>
 <script>
-  if (sessionStorage.getItem("nutrigen_auth") !== "granted") {
-    window.location.href = "/password.html";
-  }
+  (async function gateAccess() {
+    const API_BASE_URL = 'https://nutrigen-api.azurewebsites.net/api';
+    const token = localStorage.getItem('nutrigen_access_token');
+    if (!token) {
+      window.location.href = '/subscribe.html';
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/check_access`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.active) {
+        document.documentElement.style.visibility = 'visible';
+      } else {
+        localStorage.removeItem('nutrigen_access_token');
+        window.location.href = '/subscribe.html';
+      }
+    } catch (e) {
+      // Network error, not a real inactive-subscription check — don't lock
+      // out an already-verified subscriber over a transient hiccup.
+      document.documentElement.style.visibility = 'visible';
+    }
+  })();
 </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1452,6 +1473,7 @@
     </div>
     <div class="nav-meta">
       Your week, <span class="dot">·</span> personalized
+      <span class="dot">·</span> <button class="btn-ghost" style="font-size:12px;padding:0;letter-spacing:0.08em;text-transform:uppercase;" onclick="manageBilling()">Manage billing</button>
     </div>
   </header>
 
@@ -1819,6 +1841,22 @@ async function apiFetch(table, params = {}) {
     throw new Error(`${res.status} ${res.statusText}: ${text}`);
   }
   return res.json();
+}
+
+async function manageBilling() {
+  const token = localStorage.getItem('nutrigen_access_token');
+  if (!token) { window.location.href = '/subscribe.html'; return; }
+  try {
+    const res = await fetch(`${API_BASE_URL}/create_portal_session`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || 'Could not open billing portal');
+    window.location.href = data.url;
+  } catch (e) {
+    alert('Could not open the billing portal right now — please try again shortly.');
+  }
 }
 
 // Safety net: remove overlay after 10s no matter what
