@@ -1473,6 +1473,7 @@
     </div>
     <div class="nav-meta">
       Your week, <span class="dot">·</span> personalized
+      <span class="dot">·</span> <button class="btn-ghost" style="font-size:12px;padding:0;letter-spacing:0.08em;text-transform:uppercase;" onclick="openHistoryModal()">Past plans</button>
       <span class="dot">·</span> <button class="btn-ghost" style="font-size:12px;padding:0;letter-spacing:0.08em;text-transform:uppercase;" onclick="manageBilling()">Manage billing</button>
     </div>
   </header>
@@ -1815,6 +1816,35 @@
   <div class="modal" id="recipe-modal-content"></div>
 </div>
 
+<!-- Resume-last-plan prompt -->
+<div class="modal-backdrop" id="resume-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <div class="modal-eyebrow">Welcome back</div>
+      <h2 class="display" style="font-size:22px;margin-top:6px;">Resume your last plan?</h2>
+    </div>
+    <div class="modal-body" style="padding:28px 40px 36px;">
+      <p style="color:var(--ink-soft);font-size:14.5px;margin-bottom:24px;">We found a saved plan from your last visit. Pick up where you left off, or start fresh.</p>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-secondary" style="flex:1;justify-content:center;" onclick="dismissResume(false)">Start Fresh</button>
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="dismissResume(true)">Resume</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Past plans -->
+<div class="modal-backdrop" id="history-modal" onclick="closeHistoryModalOnBackdrop(event)">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeHistoryModal()">✕</button>
+      <div class="modal-eyebrow">Past Plans</div>
+      <h2 class="display" style="font-size:22px;margin-top:6px;">Your last 12 weeks</h2>
+    </div>
+    <div class="modal-body" id="history-list" style="padding:28px 40px 36px;"></div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
  *  NUTRIGEN — API CONFIG
@@ -1842,6 +1872,172 @@ async function apiFetch(table, params = {}) {
   }
   return res.json();
 }
+
+/* ============================================================
+ *  SAVED PLAN PERSISTENCE
+ * ============================================================ */
+function serializeState() {
+  return {
+    householdSize: state.householdSize,
+    cuisines:      [...state.cuisines],
+    proteins:      [...state.proteins],
+    allergies:     [...state.allergies],
+    dislikes:      state.dislikes,
+    diet:          state.diet,
+    difficulties:  [...state.difficulties],
+    healthGoals:   state.healthGoals,
+    customMacros:  state.customMacros,
+    plan:          state.plan,
+    selectedSlots: [...state.selectedSlots],
+    selectedStore: state.selectedStore,
+    shoppingList:  state.shoppingList,
+  };
+}
+
+function applySerializedState(saved) {
+  state.householdSize = saved.householdSize ?? state.householdSize;
+  state.cuisines      = new Set(saved.cuisines || []);
+  state.proteins      = new Set(saved.proteins || []);
+  state.allergies     = new Set(saved.allergies || []);
+  state.dislikes      = saved.dislikes || [];
+  state.diet          = saved.diet || 'none';
+  state.difficulties  = new Set(saved.difficulties || []);
+  state.healthGoals   = saved.healthGoals || [];
+  state.customMacros  = saved.customMacros || state.customMacros;
+  state.plan          = saved.plan || null;
+  state.selectedSlots = new Set(saved.selectedSlots || []);
+  state.selectedStore = saved.selectedStore || null;
+  state.shoppingList  = saved.shoppingList || {};
+}
+
+// Best-effort throughout — a failed save/load should never block the
+// in-session app, since state already lives fully in memory regardless.
+async function saveCurrentState() {
+  const token = localStorage.getItem('nutrigen_access_token');
+  if (!token) return;
+  try {
+    await fetch(`${API_BASE_URL}/user_state`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ state: serializeState() }),
+    });
+  } catch (e) { /* best-effort */ }
+}
+
+async function loadSavedState() {
+  const token = localStorage.getItem('nutrigen_access_token');
+  if (!token) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/user_state`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return data.state || null;
+  } catch (e) { return null; }
+}
+
+async function saveToPlanHistory() {
+  const token = localStorage.getItem('nutrigen_access_token');
+  if (!token) return;
+  try {
+    await fetch(`${API_BASE_URL}/plan_history`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ plan: state.plan }),
+    });
+  } catch (e) { /* best-effort */ }
+}
+
+async function loadPlanHistory() {
+  const token = localStorage.getItem('nutrigen_access_token');
+  if (!token) return [];
+  try {
+    const res = await fetch(`${API_BASE_URL}/plan_history`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return data.history || [];
+  } catch (e) { return []; }
+}
+
+let pendingResumeState = null;
+
+async function checkResumeOnLoad() {
+  const saved = await loadSavedState();
+  if (saved && saved.plan) {
+    pendingResumeState = saved;
+    document.getElementById('resume-modal').classList.add('open');
+  }
+}
+
+function dismissResume(shouldResume) {
+  document.getElementById('resume-modal').classList.remove('open');
+  if (shouldResume && pendingResumeState) {
+    applySerializedState(pendingResumeState);
+    renderHouseholdChips();
+    renderHealthGoalChips();
+    renderDifficultyChips();
+    renderDietChips();
+    if (state.plan) {
+      renderPlan();
+      goTo('plan');
+    } else {
+      goTo('preferences');
+    }
+  }
+  pendingResumeState = null;
+}
+
+function openHistoryModal() {
+  document.getElementById('history-modal').classList.add('open');
+  renderHistoryList();
+}
+
+function closeHistoryModal() {
+  document.getElementById('history-modal').classList.remove('open');
+}
+
+function closeHistoryModalOnBackdrop(e) {
+  if (e.target.id === 'history-modal') closeHistoryModal();
+}
+
+async function renderHistoryList() {
+  const container = document.getElementById('history-list');
+  container.innerHTML = '<p style="color:var(--ink-muted);font-size:14px;">Loading…</p>';
+  const history = await loadPlanHistory();
+  if (history.length === 0) {
+    container.innerHTML = '<p style="color:var(--ink-muted);font-size:14px;">No past plans yet — finish a week\'s shopping list to start building history.</p>';
+    return;
+  }
+  container.innerHTML = '';
+  history.forEach(entry => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);';
+    const date = new Date(entry.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const label = document.createElement('span');
+    label.style.fontSize = '14.5px';
+    label.textContent = date;
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-secondary';
+    btn.style.cssText = 'padding:8px 18px;font-size:12px;';
+    btn.textContent = 'Load';
+    btn.onclick = () => loadHistoryEntry(entry);
+    row.appendChild(label);
+    row.appendChild(btn);
+    container.appendChild(row);
+  });
+}
+
+function loadHistoryEntry(entry) {
+  state.plan = entry.plan;
+  state.selectedSlots = new Set();
+  renderPlan();
+  closeHistoryModal();
+  goTo('plan');
+  showToast('Loaded plan from ' + new Date(entry.created_at).toLocaleDateString());
+}
+
+checkResumeOnLoad();
 
 async function manageBilling() {
   const token = localStorage.getItem('nutrigen_access_token');
@@ -3634,8 +3830,10 @@ async function generatePlan(reshuffle=false) {
       });
     });
     state.plan.missingTypes = [];
+    state.plan.historySaved = false;
     renderPlan();
     goTo('plan');
+    saveCurrentState();
     return;
   }
 
@@ -3662,9 +3860,10 @@ async function generatePlan(reshuffle=false) {
       dinner: dinners[i],
     });
   }
-  state.plan = {days, missingTypes, difficultyWarning};
+  state.plan = {days, missingTypes, difficultyWarning, historySaved: false};
   renderPlan();
   goTo('plan');
+  saveCurrentState();
 }
 
 /* ============================================================
@@ -3983,6 +4182,11 @@ function showShoppingList() {
   renderStoreChips();
   renderShoppingList();
   goTo('shopping');
+  saveCurrentState();
+  if (state.plan && !state.plan.historySaved) {
+    state.plan.historySaved = true;
+    saveToPlanHistory();
+  }
 }
 
 function renderStoreChips() {
@@ -4189,6 +4393,7 @@ function resetAll() {
   renderDifficultyChips();
     renderDietChips();
   goTo('welcome');
+  saveCurrentState();
 }
 </script>
 </body>
