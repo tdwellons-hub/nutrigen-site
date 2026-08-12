@@ -5,6 +5,10 @@
       "rewrite": "/landing.html"
     },
     {
+      "route": "/password.html",
+      "serve": "/password.html"
+    },
+    {
       "route": "/landing.html",
       "serve": "/landing.html"
     },
@@ -27,6 +31,6 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/subscribe.html", "/subscribe-success.html", "/landing.html", "/*.html"]
+    "exclude": ["/subscribe.html", "/subscribe-success.html", "/landing.html", "/password.html", "/*.html"]
   }
 }
