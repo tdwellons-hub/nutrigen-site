@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NutriGen — Family Meal Planning, Personalized to You</title>
+<meta name="description" content="AI-powered weekly meal planning for families. Seven days of breakfasts, lunches, and dinners, personalized to your household — plus one consolidated shopping list." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5efe6;
+    --bg-elev: #fbf7f0;
+    --ink: #1f1a14;
+    --ink-soft: #5a4f42;
+    --ink-muted: #8c8276;
+    --line: #e6dcc9;
+    --line-strong: #c9bda5;
+    --sage: #3d5a3d;
+    --sage-deep: #2a4129;
+    --terracotta: #b85742;
+    --terracotta-soft: #d68b75;
+    --gold: #c4954a;
+    --cream-card: #fdfaf3;
+    --shadow-sm: 0 1px 2px rgba(31,26,20,.05), 0 2px 8px rgba(31,26,20,.04);
+    --shadow-md: 0 4px 16px rgba(31,26,20,.08), 0 12px 32px rgba(31,26,20,.06);
+    --shadow-lg: 0 20px 48px rgba(31,26,20,.18);
+    --radius-sm: 4px;
+    --radius-md: 10px;
+    --radius-lg: 18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(196,149,74,.08), transparent 45%),
+      radial-gradient(circle at 88% 95%, rgba(61,90,61,.07), transparent 50%);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .35;
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .12 0 0 0 0 .1 0 0 0 0 .08 0 0 0 .35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  .display { font-family: 'Fraunces', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+  .display-italic { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 400; }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 32px 80px;
+  }
+
+  /* ============ Top nav ============ */
+  .top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 48px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--sage);
+    color: var(--bg);
+    display: grid;
+    place-items: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 500;
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,.12);
+  }
+  .brand-text { line-height: 1; }
+  .brand-text .name { font-family: 'Fraunces', serif; font-size: 22px; letter-spacing: -0.01em; }
+  .brand-text .tag {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-top: 4px;
+  }
+
+  /* ============ Buttons ============ */
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 16px 32px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--ink); color: var(--bg); }
+  .btn-primary:hover { background: var(--sage-deep); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
+  .btn-secondary:hover { background: var(--cream-card); border-color: var(--ink); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    padding: 12px 0;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  .btn-ghost:hover { color: var(--sage-deep); }
+
+  /* ============ Hero ============ */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 60px;
+    align-items: center;
+    margin-top: 12px;
+  }
+  .hero-eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-eyebrow::before { content: ""; display: block; width: 32px; height: 1px; background: var(--terracotta); }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(48px, 6.4vw, 84px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    font-weight: 360;
+  }
+  .hero h1 em { font-style: italic; font-weight: 300; color: var(--sage); }
+  .hero p { margin-top: 24px; font-size: 17px; line-height: 1.6; color: var(--ink-soft); max-width: 520px; }
+  .hero-actions { margin-top: 36px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .stat-row { margin-top: 56px; display: flex; gap: 48px; padding-top: 28px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 4px; }
+  .stat-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 400; line-height: 1; }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-muted); }
+
+  .hero-visual {
+    position: relative;
+    aspect-ratio: 1 / 1.05;
+    background: var(--cream-card);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--line);
+  }
+  .hero-visual svg { width: 100%; height: 100%; display: block; }
+
+  /* ============ Sample day ============ */
+  .section { margin-top: 96px; }
+  .section-header { max-width: 620px; margin-bottom: 36px; }
+  .section-header h2 { font-size: 34px; margin: 10px 0 12px; }
+  .section-header p { color: var(--ink-soft); font-size: 15.5px; line-height: 1.6; }
+
+  .meal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .meal-card {
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 150px;
+    position: relative;
+    overflow: hidden;
+  }
+  .meal-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--sage);
+    opacity: 1;
+  }
+  .meal-card.breakfast::before { background: var(--gold); }
+  .meal-card.lunch::before { background: var(--sage); }
+  .meal-card.dinner::before { background: var(--terracotta); }
+  .meal-tag { font-size: 9px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-muted); font-weight: 500; }
+  .meal-card.breakfast .meal-tag { color: var(--gold); }
+  .meal-card.lunch .meal-tag { color: var(--sage); }
+  .meal-card.dinner .meal-tag { color: var(--terracotta); }
+  .meal-name { font-family: 'Fraunces', serif; font-size: 17px; line-height: 1.25; letter-spacing: -0.005em; flex: 1; }
+  .meal-meta { display: flex; gap: 10px; font-size: 11px; color: var(--ink-muted); align-items: center; flex-wrap: wrap; }
+  .meal-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .health-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 3px 7px;
+    border-radius: 20px;
+  }
+  .health-badge.compliant { background: rgba(61,90,61,.1); color: var(--sage-deep); border: 1px solid rgba(61,90,61,.2); }
+  .difficulty-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 3px 8px;
+    border-radius: 20px;
+  }
+  .difficulty-badge.easy { background: rgba(61,90,61,.1); color: var(--sage-deep); border: 1px solid rgba(61,90,61,.2); }
+  .view-recipe-link {
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-style: italic;
+    letter-spacing: 0.02em;
+    border-top: 1px dotted var(--line-strong);
+    padding-top: 8px;
+    margin-top: auto;
+  }
+  .sample-footer { margin-top: 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .sample-footer p { color: var(--ink-muted); font-style: italic; font-size: 14px; }
+
+  /* ============ How it works ============ */
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .step-card { padding-top: 20px; border-top: 2px solid var(--line-strong); }
+  .step-num { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; color: var(--terracotta); margin-bottom: 10px; }
+  .step-card h3 { font-family: 'Fraunces', serif; font-size: 21px; margin-bottom: 8px; font-weight: 400; }
+  .step-card p { color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; }
+
+  /* ============ Final CTA band ============ */
+  .cta-band {
+    margin-top: 96px;
+    text-align: center;
+    background: var(--cream-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 64px 40px;
+  }
+  .cta-band h2 { font-size: 36px; margin-bottom: 14px; }
+  .cta-band p { color: var(--ink-soft); font-size: 15.5px; max-width: 460px; margin: 0 auto 32px; }
+
+  /* ============ Footer ============ */
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: var(--ink-muted);
+    font-size: 13px;
+  }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-visual { max-width: 420px; margin: 0 auto; }
+    .meal-grid, .steps-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<script>
+  if (localStorage.getItem('nutrigen_access_token')) {
+    window.location.href = '/index.html';
+  }
+</script>
+
+<div class="app">
+
+  <header class="top-nav">
+    <div class="brand">
+      <div class="brand-mark">N</div>
+      <div class="brand-text">
+        <div class="name">NutriGen</div>
+        <div class="tag">Family Meal Planning</div>
+      </div>
+    </div>
+    <a class="btn-ghost" href="/subscribe.html">Already a subscriber? Sign in</a>
+  </header>
+
+  <section class="hero">
+    <div>
+      <div class="hero-eyebrow">AI-powered weekly meal planning</div>
+      <h1>Plan a week of <em>healthy, family-friendly</em> meals — without the Sunday-night scramble.</h1>
+      <p>Tell us your favorite cuisines, your go-to proteins, and anything you'd rather skip. NutriGen builds seven days of breakfasts, lunches, and dinners — with recipes and one consolidated shopping list — personalized to your household.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/subscribe.html">Start your free trial <span>→</span></a>
+        <button class="btn btn-ghost" onclick="document.getElementById('sample').scrollIntoView({behavior:'smooth'})">See a sample day</button>
+      </div>
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-num display">500+</div>
+          <div class="stat-label">Recipes in the library</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num display">21</div>
+          <div class="stat-label">Meals per week</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num display">7 days</div>
+          <div class="stat-label">Free trial, cancel anytime</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <svg viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="plate" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fdfaf3"/>
+            <stop offset="100%" stop-color="#e8ddc6"/>
+          </radialGradient>
+          <linearGradient id="leaf" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stop-color="#4a6b48"/>
+            <stop offset="100%" stop-color="#2a4129"/>
+          </linearGradient>
+        </defs>
+        <rect width="400" height="420" fill="#fbf7f0"/>
+        <circle cx="200" cy="220" r="155" fill="url(#plate)" stroke="#c9bda5" stroke-width="1"/>
+        <circle cx="200" cy="220" r="135" fill="none" stroke="#d6c8ad" stroke-width="0.5" stroke-dasharray="2 4"/>
+        <circle cx="155" cy="195" r="22" fill="#b85742"/>
+        <circle cx="148" cy="188" r="5" fill="#d68b75" opacity=".6"/>
+        <path d="M 153 175 Q 155 168 162 172" stroke="#4a6b48" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="185" cy="175" r="18" fill="#c66651"/>
+        <circle cx="180" cy="170" r="4" fill="#d68b75" opacity=".5"/>
+        <ellipse cx="240" cy="180" rx="35" ry="20" fill="url(#leaf)" transform="rotate(-20 240 180)"/>
+        <ellipse cx="255" cy="200" rx="28" ry="16" fill="#3d5a3d" transform="rotate(15 255 200)"/>
+        <ellipse cx="225" cy="210" rx="25" ry="14" fill="#4a6b48" transform="rotate(-10 225 210)"/>
+        <ellipse cx="220" cy="260" rx="22" ry="18" fill="#c4954a"/>
+        <ellipse cx="216" cy="256" rx="5" ry="3" fill="#e0b167" opacity=".6"/>
+        <path d="M 145 245 Q 145 225 175 225 Q 205 225 205 245 Q 205 275 175 275 Q 145 275 145 245" fill="#d6c08a"/>
+        <circle cx="160" cy="240" r="1.5" fill="#a88a52"/>
+        <circle cx="170" cy="245" r="1.5" fill="#a88a52"/>
+        <circle cx="180" cy="240" r="1.5" fill="#a88a52"/>
+        <circle cx="190" cy="248" r="1.5" fill="#a88a52"/>
+        <circle cx="165" cy="252" r="1.5" fill="#a88a52"/>
+        <circle cx="185" cy="258" r="1.5" fill="#a88a52"/>
+        <path d="M 200 280 Q 195 295 200 310 Q 205 295 200 280" fill="#3d5a3d"/>
+        <path d="M 200 285 L 195 290 M 200 290 L 205 295 M 200 295 L 195 300" stroke="#3d5a3d" stroke-width="1.5"/>
+        <text x="200" y="395" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="14" fill="#8c8276">
+          no. 01 — your table
+        </text>
+      </svg>
+    </div>
+  </section>
+
+  <section class="section" id="sample">
+    <div class="section-header">
+      <div class="hero-eyebrow">A sample day</div>
+      <h2 class="display">One day, fully planned</h2>
+      <p>Here's a taste of what your week could look like — three real meals from our library.</p>
+    </div>
+    <div class="meal-grid">
+      <div class="meal-card breakfast">
+        <div class="meal-tag">Breakfast</div>
+        <div class="meal-name">Greek Yogurt Parfait with Honey &amp; Walnuts</div>
+        <div class="badge-row">
+          <span class="difficulty-badge easy">Easy</span>
+        </div>
+        <div class="meal-meta"><span>⏱ 8 min</span><span>🔥 310 kcal</span></div>
+        <div class="view-recipe-link">Full recipe unlocked after signup</div>
+      </div>
+      <div class="meal-card lunch">
+        <div class="meal-tag">Lunch</div>
+        <div class="meal-name">Mediterranean Chickpea Bowl</div>
+        <div class="badge-row">
+          <span class="health-badge compliant">✓ Heart-Healthy</span>
+        </div>
+        <div class="meal-meta"><span>⏱ 20 min</span><span>🔥 480 kcal</span></div>
+        <div class="view-recipe-link">Full recipe unlocked after signup</div>
+      </div>
+      <div class="meal-card dinner">
+        <div class="meal-tag">Dinner</div>
+        <div class="meal-name">Sheet-Pan Lemon-Herb Salmon with Asparagus</div>
+        <div class="badge-row">
+          <span class="difficulty-badge easy">Easy</span>
+          <span class="health-badge compliant">✓ Heart-Healthy</span>
+        </div>
+        <div class="meal-meta"><span>⏱ 30 min</span><span>🔥 520 kcal</span></div>
+        <div class="view-recipe-link">Full recipe unlocked after signup</div>
+      </div>
+    </div>
+    <div class="sample-footer">
+      <p>…and 18 more meals like this, built around your preferences.</p>
+      <a class="btn btn-secondary" href="/subscribe.html">Build my week <span>→</span></a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-header">
+      <div class="hero-eyebrow">How it works</div>
+      <h2 class="display">Three steps to your week</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <h3>Tell us what you like</h3>
+        <p>Cuisines, proteins, allergies, dislikes, household size, and health goals.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <h3>Get your week</h3>
+        <p>Seven days of meals scored to your preferences, with health and difficulty badges on every card.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <h3>Shop once</h3>
+        <p>One consolidated shopping list for everything on your plan.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <h2 class="display">Ready to plan your week?</h2>
+    <p>Start your 7-day free trial — full access from day one, cancel anytime before you're charged.</p>
+    <a class="btn btn-primary" href="/subscribe.html">Start your free trial <span>→</span></a>
+  </section>
+
+  <footer class="footer">
+    <div>© 2026 NutriGen</div>
+    <a class="btn-ghost" href="/subscribe.html">Already a subscriber? Sign in</a>
+  </footer>
+
+</div>
+</body>
+</html>

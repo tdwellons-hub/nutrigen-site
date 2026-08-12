@@ -1,6 +1,14 @@
 {
   "routes": [
     {
+      "route": "/",
+      "rewrite": "/landing.html"
+    },
+    {
+      "route": "/landing.html",
+      "serve": "/landing.html"
+    },
+    {
       "route": "/subscribe.html",
       "serve": "/subscribe.html"
     },
@@ -19,6 +27,6 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/subscribe.html", "/subscribe-success.html", "/*.html"]
+    "exclude": ["/subscribe.html", "/subscribe-success.html", "/landing.html", "/*.html"]
   }
 }

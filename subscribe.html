@@ -182,7 +182,7 @@
   <div class="card">
     <div class="brand-mark">N</div>
     <h1 class="display">Get full access</h1>
-    <p class="sub">Personalized weekly meal plans, shopping lists, and macro tracking for your household.</p>
+    <p class="sub">Start your 7-day free trial — full access to personalized weekly meal plans, shopping lists, and macro tracking. Cancel anytime before you're charged.</p>
 
     <div class="banner" id="canceled-banner" style="display:none;">
       Checkout canceled — no charge was made. You can try again below.
@@ -191,7 +191,7 @@
 
     <label for="email">Email</label>
     <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
-    <button class="btn btn-primary" id="subscribe-btn" onclick="startCheckout()">Subscribe</button>
+    <button class="btn btn-primary" id="subscribe-btn" onclick="startCheckout()">Start free trial</button>
 
     <div class="divider">or</div>
     <button class="toggle-link" id="code-toggle" onclick="toggleCodePanel()">Already have an access code?</button>
@@ -238,7 +238,7 @@
     } catch (e) {
       showError('Something went wrong starting checkout. Please try again in a moment.');
       btn.disabled = false;
-      btn.textContent = 'Subscribe';
+      btn.textContent = 'Start free trial';
     }
   }
 
