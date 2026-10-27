@@ -17,12 +17,22 @@ Currently in prototype/investor preview stage.
 - GitHub Actions auto-deploy on push to main
 
 ## Deployment
-ALWAYS use git push — NEVER use swa deploy:
-  cd ~/nutrigen-site
+ALWAYS use git push — NEVER use swa deploy.
+
+This repo is SINGLE-BRANCH on `main` as of 2026-10-27: `main` is the default
+branch, the branch you work on, and the only branch the deploy workflow
+watches. Do not reintroduce a master/main split.
+
+  cd ~/nutrigen/nutrigen-site
   git add .
   git commit -m "describe change"
-  git push
-GitHub Actions deploys automatically in ~1 minute.
+  git push                      # -> main, auto-deploys in ~1 minute
+
+History: work used to happen on `master` while the workflow watched only
+`main`, so a plain `git push` from master deployed NOTHING and the fix had to
+be pushed twice (`git push origin master:main`). `master` was retired on
+2026-10-27 — it was already identical to `main`, so nothing was rewritten.
+`origin/master` still exists as an inert alias that nothing watches.
 
 ## File Structure
   index.html          — entire frontend application
