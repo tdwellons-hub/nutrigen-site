@@ -32,7 +32,12 @@ History: work used to happen on `master` while the workflow watched only
 `main`, so a plain `git push` from master deployed NOTHING and the fix had to
 be pushed twice (`git push origin master:main`). `master` was retired on
 2026-10-27 — it was already identical to `main`, so nothing was rewritten.
-`origin/master` still exists as an inert alias that nothing watches.
+`origin/master` still exists at the same commit: nothing deploys from it, but
+it STILL ACCEPTS PUSHES, so a stray `git push origin master` would land work
+that never ships. Delete it if you prefer that it not be possible.
+
+Note this workflow has NO path filter: any push to `main` redeploys the site,
+including a docs-only change to this file.
 
 ## File Structure
   index.html          — entire frontend application
